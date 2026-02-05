@@ -30,6 +30,8 @@ frontend/.vite/
 *.swp
 *.swo
 .cursor/
+.cursor/plans
+
 
 # OS
 .DS_Store
