@@ -1,0 +1,8 @@
+{
+  "name": "renova-parse-app",
+  "version": "1.0.0",
+  "description": "Unified CRM for Zillow and Seattle Permits parsing",
+  "scripts": {
+    "start": "python start.py"
+  }
+}
