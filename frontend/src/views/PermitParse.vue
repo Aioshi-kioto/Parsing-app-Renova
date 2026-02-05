@@ -23,7 +23,19 @@
       </div>
 
       <!-- Configuration Form -->
-      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4 mb-6">
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-1">Period</label>
+          <select 
+            v-model="config.period"
+            class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
+          >
+            <option :value="null">Full year</option>
+            <option value="last_month">Last month</option>
+            <option value="last_3_months">Last 3 months</option>
+          </select>
+        </div>
+
         <div>
           <label class="block text-sm font-medium text-gray-700 mb-1">Year</label>
           <select 
@@ -33,6 +45,28 @@
             <option :value="2026">2026</option>
             <option :value="2025">2025</option>
             <option :value="2024">2024</option>
+          </select>
+        </div>
+
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-1">Month (optional)</label>
+          <select 
+            v-model="config.month"
+            class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
+          >
+            <option :value="null">All</option>
+            <option :value="1">January</option>
+            <option :value="2">February</option>
+            <option :value="3">March</option>
+            <option :value="4">April</option>
+            <option :value="5">May</option>
+            <option :value="6">June</option>
+            <option :value="7">July</option>
+            <option :value="8">August</option>
+            <option :value="9">September</option>
+            <option :value="10">October</option>
+            <option :value="11">November</option>
+            <option :value="12">December</option>
           </select>
         </div>
 
@@ -130,8 +164,9 @@
           </div>
         </div>
 
-        <div v-if="currentStatus.error_message" class="bg-red-50 border border-red-200 rounded-lg p-3">
-          <p class="text-sm text-red-700">{{ currentStatus.error_message }}</p>
+        <div v-if="currentStatus.error_message" class="bg-amber-50 border border-amber-200 rounded-lg p-3">
+          <p class="text-sm text-amber-800 font-medium">Note:</p>
+          <p class="text-sm text-amber-700 mt-1">{{ currentStatus.error_message }}</p>
         </div>
       </div>
     </div>
@@ -184,6 +219,7 @@
               <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Permits</th>
               <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Owners</th>
               <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Date</th>
+              <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Error / Note</th>
               <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Actions</th>
             </tr>
           </thead>
@@ -202,6 +238,12 @@
               <td class="px-4 py-3 text-sm text-gray-600">{{ job.permits_found }}</td>
               <td class="px-4 py-3 text-sm font-medium text-purple-600">{{ job.owner_builders_found }}</td>
               <td class="px-4 py-3 text-sm text-gray-500">{{ formatDate(job.started_at) }}</td>
+              <td class="px-4 py-3 text-sm max-w-xs">
+                <span v-if="job.error_message" class="text-amber-700" :title="job.error_message">
+                  {{ job.error_message.slice(0, 50) }}{{ job.error_message.length > 50 ? '...' : '' }}
+                </span>
+                <span v-else class="text-gray-400">—</span>
+              </td>
               <td class="px-4 py-3 space-x-2">
                 <a
                   v-if="job.permits_found > 0"
@@ -301,6 +343,7 @@ async function startParsing() {
     await pollStatus()
     await loadJobs()
   } catch (error) {
+    console.error('[PermitParse] Error starting parse:', error)
     alert('Error starting parse: ' + error.message)
   }
 }

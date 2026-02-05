@@ -4,7 +4,7 @@ from typing import Any
 
 from bs4 import BeautifulSoup  # type: ignore
 
-from pyzill.utils import remove_space,get_nested_value
+from core.utils import remove_space,get_nested_value
 
 
 def parse_body_home(body: bytes) -> dict[str, Any]:

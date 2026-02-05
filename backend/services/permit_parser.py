@@ -32,8 +32,50 @@ ACCELA_BASE_URL = "https://cosaccela.seattle.gov"
 ACCELA_PERMIT_URL = f"{ACCELA_BASE_URL}/portal/cap/capDetail.aspx"
 
 
+def _get_date_range(year: int, month: Optional[int] = None, period: Optional[str] = None) -> tuple:
+    """Возвращает (date_from, date_to) для запроса. period: 'last_month' | 'last_3_months' | 'year'"""
+    from datetime import date
+    
+    today = date.today()
+    
+    if period in (None, "year", ""):
+        return f"{year}-01-01", f"{year + 1}-01-01"
+    
+    if period == "last_month":
+        # Предыдущий месяц
+        if today.month == 1:
+            start = date(today.year - 1, 12, 1)
+            end = date(today.year, 1, 1)
+        else:
+            start = date(today.year, today.month - 1, 1)
+            end = date(today.year, today.month, 1)
+        return start.strftime("%Y-%m-%d"), end.strftime("%Y-%m-%d")
+    elif period == "last_3_months":
+        # Последние 3 полных месяца (не включая текущий)
+        if today.month <= 3:
+            start = date(today.year - 1, today.month + 9, 1)  # e.g. Feb -> Nov prev year
+        else:
+            start = date(today.year, today.month - 3, 1)
+        if today.month == 12:
+            end = date(today.year + 1, 1, 1)
+        else:
+            end = date(today.year, today.month + 1, 1)
+        return start.strftime("%Y-%m-%d"), end.strftime("%Y-%m-%d")
+    elif month is not None and 1 <= month <= 12:
+        date_from = f"{year}-{month:02d}-01"
+        if month == 12:
+            date_to = f"{year + 1}-01-01"
+        else:
+            date_to = f"{year}-{month + 1:02d}-01"
+        return date_from, date_to
+    else:
+        return f"{year}-01-01", f"{year + 1}-01-01"
+
+
 def build_soql_query(
     year: int = 2026,
+    month: Optional[int] = None,
+    period: Optional[str] = None,
     permit_class: Optional[str] = None,
     permit_type: str = "Building",
     contractor_is_null: bool = True,
@@ -44,14 +86,14 @@ def build_soql_query(
     """Построение SoQL запроса для фильтрации пермитов"""
     conditions = []
     
-    # Фильтр по году
-    conditions.append(f"applieddate >= '{year}-01-01'")
-    conditions.append(f"applieddate < '{year + 1}-01-01'")
+    date_from, date_to = _get_date_range(year, month, period)
+    conditions.append(f"applieddate >= '{date_from}'")
+    conditions.append(f"applieddate < '{date_to}'")
     
     # Фильтр по классу пермита
     if permit_class:
-        # Обработка вариантов написания
-        permit_class_normalized = permit_class.replace(" / ", "/").replace("/", " / ")
+        # API Seattle ожидает "Single Family/Duplex" (без пробелов вокруг /)
+        permit_class_normalized = permit_class.replace(" / ", "/").strip()
         conditions.append(f"permitclass = '{permit_class_normalized}'")
     
     # Фильтр по типу пермита
@@ -83,6 +125,8 @@ def build_soql_query(
 
 def fetch_permits_from_api(
     year: int = 2026,
+    month: Optional[int] = None,
+    period: Optional[str] = None,
     permit_class: Optional[str] = None,
     min_cost: float = 5000,
     limit: int = 10000,
@@ -92,6 +136,8 @@ def fetch_permits_from_api(
     
     params = build_soql_query(
         year=year,
+        month=month,
+        period=period,
         permit_class=permit_class,
         min_cost=min_cost,
         limit=limit,
@@ -250,30 +296,48 @@ def verify_permit_sync(permit_num: str) -> Dict[str, Any]:
 def parse_permits(
     job_id: int,
     year: int,
-    permit_class: Optional[str],
-    min_cost: float,
+    month: Optional[int] = None,
+    period: Optional[str] = None,
+    permit_class: Optional[str] = None,
+    min_cost: float = 5000,
     verify: bool = True
 ):
     """Основной процесс парсинга пермитов"""
     try:
         update_permit_job(job_id, status="fetching")
-        logger.info(f"[JOB {job_id}] Starting permit parsing for year {year}")
+        range_desc = f"period={period}" if period else (f"{year}-{month:02d}" if month else str(year))
+        logger.info(f"[JOB {job_id}] Starting permit parsing for {range_desc}")
         
         # 1. Получаем данные из API
-        raw_permits = fetch_permits_from_api(
-            year=year,
-            permit_class=permit_class,
-            min_cost=min_cost
-        )
+        try:
+            raw_permits = fetch_permits_from_api(
+                year=year,
+                month=month,
+                period=period,
+                permit_class=permit_class,
+                min_cost=min_cost
+            )
+        except Exception as api_err:
+            err_msg = f"API error: {api_err}"
+            logger.error(f"[JOB {job_id}] {err_msg}")
+            update_permit_job(
+                job_id,
+                status="failed",
+                error_message=err_msg,
+                completed_at=datetime.now().isoformat()
+            )
+            return
         
         if not raw_permits:
+            msg = "No permits found for the selected criteria. Try Last month or a different year (e.g. 2025)."
+            logger.warning(f"[JOB {job_id}] {msg}")
             update_permit_job(
                 job_id,
                 status="completed",
                 permits_found=0,
+                error_message=msg,
                 completed_at=datetime.now().isoformat()
             )
-            logger.info(f"[JOB {job_id}] No permits found")
             return
         
         update_permit_job(job_id, status="processing", permits_found=len(raw_permits))
@@ -343,15 +407,18 @@ def parse_permits(
         )
         
     except Exception as e:
-        logger.error(f"[JOB {job_id}] Critical error: {e}")
+        err_msg = str(e)
+        logger.error(f"[JOB {job_id}] Critical error: {err_msg}")
         import traceback
         logger.error(traceback.format_exc())
-        update_permit_job(job_id, status="failed", error_message=str(e))
+        update_permit_job(job_id, status="failed", error_message=err_msg)
 
 
 def start_permit_parse_job(
     job_id: int,
     year: int,
+    month: Optional[int] = None,
+    period: Optional[str] = None,
     permit_class: Optional[str] = None,
     min_cost: float = 5000,
     verify: bool = True
@@ -362,6 +429,8 @@ def start_permit_parse_job(
         parse_permits,
         job_id=job_id,
         year=year,
+        month=month,
+        period=period,
         permit_class=permit_class,
         min_cost=min_cost,
         verify=verify

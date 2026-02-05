@@ -1,6 +1,6 @@
 from typing import Any
 from curl_cffi import requests
-from pyzill.parse import parse_body_home,parse_body_deparments
+from core.parse import parse_body_home,parse_body_deparments
 
 headers = {
     "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7",

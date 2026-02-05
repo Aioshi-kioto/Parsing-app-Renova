@@ -61,12 +61,34 @@ def save_homes_to_db(job_id: int, homes: List[Dict[str, Any]]) -> int:
     return saved_count
 
 
+def _dedupe_urls(urls: List[str]) -> List[str]:
+    """Удаляет дубликаты URL (нормализация + уникальность)."""
+    seen = set()
+    result = []
+    for url in urls:
+        u = url.strip()
+        if not u or "zillow.com" not in u:
+            continue
+        # Нормализуем: убираем trailing slash, приводим к нижнему регистру для сравнения
+        key = u.rstrip("/").lower()
+        if key not in seen:
+            seen.add(key)
+            result.append(u)
+    return result
+
+
 def parse_urls(job_id: int, urls: List[str]):
     """Парсит список URL и сохраняет результаты в БД"""
     try:
         # Импортируем core модули
         from core.playwright_search import search_from_url_playwright_sync, parse_zillow_url
         from core.tiling import fetch_with_quadtree, remove_duplicates, init_checkpoint
+        
+        # Удаляем дубликаты URL перед парсингом
+        urls = _dedupe_urls(urls)
+        if not urls:
+            update_zillow_job(job_id, status="failed", error_message="Нет валидных URL после удаления дубликатов")
+            return
         
         update_zillow_job(job_id, status="waiting_captcha", current_url_index=0)
         
@@ -143,16 +165,18 @@ def parse_urls(job_id: int, urls: List[str]):
                     
                     unique_results = remove_duplicates(quadtree_results)
                     logger.info(f"[JOB {job_id}] URL {url_index + 1}: QuadTree завершён, уникальных домов: {len(unique_results)}")
-                    all_homes.extend(unique_results)
                 else:
-                    # < 500, сохраняем как есть
+                    # < 500, дедуплицируем результаты
                     unique_results = remove_duplicates(map_results)
                     logger.info(f"[JOB {job_id}] URL {url_index + 1}: уникальных домов: {len(unique_results)}")
-                    all_homes.extend(unique_results)
                 
-                # Сохраняем дома в БД
+                # Добавляем в общий список и дедуплицируем по zpid (между URL могут быть пересечения)
+                all_homes.extend(unique_results)
+                all_homes = remove_duplicates(all_homes)
+                
+                # Сохраняем только новые уникальные дома в БД (INSERT OR IGNORE по zpid)
                 saved = save_homes_to_db(job_id, unique_results)
-                logger.info(f"[JOB {job_id}] URL {url_index + 1}: сохранено {saved} домов в БД")
+                logger.info(f"[JOB {job_id}] URL {url_index + 1}: сохранено {saved} домов в БД, всего уникальных: {len(all_homes)}")
                 
                 # Обновляем статистику
                 update_zillow_job(job_id, homes_found=len(all_homes))

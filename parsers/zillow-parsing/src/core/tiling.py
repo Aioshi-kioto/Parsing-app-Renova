@@ -4,6 +4,7 @@ import json
 import os
 from datetime import datetime
 from core.playwright_search import search_sold_playwright_sync
+from core.search import sold
 
 # Настройка логирования
 logging.basicConfig(
@@ -228,7 +229,7 @@ def fetch_with_quadtree(
             )
         else:
             logger.info(f"[QUADTREE] Использование API для запроса...")
-            results = pyzill.sold(
+            results = sold(
                 pagination=1,
                 search_value="",
                 min_beds=None,

@@ -26,27 +26,28 @@ router = APIRouter()
 @router.post("/parse", response_model=dict)
 async def start_parse(request: PermitParseRequest):
     """Запуск парсинга пермитов"""
-    # Создаём задачу в БД
     job_id = create_permit_job(
         year=request.year,
         permit_class=request.permit_class,
         min_cost=request.min_cost
     )
     
-    # Импортируем и запускаем парсер
     from services.permit_parser import start_permit_parse_job
     start_permit_parse_job(
         job_id=job_id,
         year=request.year,
+        month=request.month,
+        period=request.period,
         permit_class=request.permit_class,
         min_cost=request.min_cost,
         verify=request.verify_owner_builder
     )
     
     return {
-        "job_id": job_id, 
+        "job_id": job_id,
         "status": "started",
         "year": request.year,
+        "period": request.period or (f"month-{request.month}" if request.month else "year"),
         "permit_class": request.permit_class
     }
 
@@ -76,7 +77,7 @@ async def get_jobs(limit: int = 100):
     cursor = conn.cursor()
     
     cursor.execute("""
-        SELECT id, status, year, permits_found, owner_builders_found, started_at, completed_at
+        SELECT id, status, year, permits_found, owner_builders_found, error_message, started_at, completed_at
         FROM permit_jobs
         ORDER BY started_at DESC
         LIMIT ?

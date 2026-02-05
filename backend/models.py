@@ -104,6 +104,11 @@ class ZillowStats(BaseModel):
 class PermitParseRequest(BaseModel):
     """Запрос на парсинг пермитов"""
     year: int = Field(default=2026, ge=2000, le=2030)
+    month: Optional[int] = Field(default=None, ge=1, le=12, description="Месяц (1-12), если не задан — весь год")
+    period: Optional[str] = Field(
+        default=None,
+        description="Период: last_month, last_3_months или year. Имеет приоритет над month"
+    )
     permit_class: Optional[str] = Field(default="Single Family / Duplex")
     min_cost: float = Field(default=5000, ge=0)
     verify_owner_builder: bool = Field(default=True, description="Верифицировать owner-builder через портал")
@@ -131,6 +136,7 @@ class PermitJobListItem(BaseModel):
     year: int
     permits_found: int
     owner_builders_found: int
+    error_message: Optional[str] = None
     started_at: datetime
     completed_at: Optional[datetime] = None
 

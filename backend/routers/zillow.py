@@ -23,15 +23,26 @@ from models import (
 router = APIRouter()
 
 
+def _dedupe_urls(urls: List[str]) -> List[str]:
+    """Удаляет дубликаты URL."""
+    seen = set()
+    result = []
+    for url in urls:
+        u = url.strip()
+        if not u or "zillow.com" not in u:
+            continue
+        key = u.rstrip("/").lower()
+        if key not in seen:
+            seen.add(key)
+            result.append(u)
+    return result
+
+
 @router.post("/parse", response_model=dict)
 async def start_parse(request: ZillowParseRequest):
     """Запуск парсинга Zillow по списку URL"""
-    # Валидация URL
-    valid_urls = []
-    for url in request.urls:
-        url = url.strip()
-        if url and "zillow.com" in url:
-            valid_urls.append(url)
+    # Валидация и удаление дубликатов URL
+    valid_urls = _dedupe_urls(request.urls)
     
     if not valid_urls:
         raise HTTPException(status_code=400, detail="Нет валидных URL Zillow")
