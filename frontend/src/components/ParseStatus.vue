@@ -12,7 +12,7 @@
         </div>
         <div class="w-full bg-gray-200 rounded-full h-2.5">
           <div
-            class="bg-blue-600 h-2.5 rounded-full transition-all duration-300"
+            class="bg-gray-900 h-2.5 rounded-full transition-all duration-300"
             :style="{ width: `${progressPercent}%` }"
           ></div>
         </div>
@@ -88,7 +88,7 @@ const statusColor = computed(() => {
   const colorMap = {
     pending: 'text-gray-600',
     waiting_captcha: 'text-yellow-600',
-    parsing: 'text-blue-600',
+    parsing: 'text-gray-900',
     completed: 'text-green-600',
     failed: 'text-red-600'
   }

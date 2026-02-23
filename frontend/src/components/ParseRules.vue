@@ -1,5 +1,5 @@
 <template>
-  <div class="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
+  <div class="bg-gray-50 border border-gray-200 rounded-lg p-4 mb-6">
     <button
       @click="expanded = !expanded"
       class="w-full flex items-center justify-between text-left font-semibold text-blue-900"

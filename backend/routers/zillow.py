@@ -3,12 +3,15 @@ Zillow API Router
 Endpoints для парсинга и получения данных Zillow
 """
 from fastapi import APIRouter, HTTPException, Query
-from fastapi.responses import StreamingResponse
+from fastapi.responses import StreamingResponse, Response
 from typing import List, Optional
 import csv
 import io
 import json
+import re
 from datetime import datetime
+
+from utils.excel_export import create_formatted_excel
 
 import sys
 from pathlib import Path
@@ -21,6 +24,25 @@ from models import (
 )
 
 router = APIRouter()
+
+
+def _parse_price(value):
+    """Преобразует цену из строк вроде '$740,000' или '1.00M' в float."""
+    if value is None:
+        return None
+    if isinstance(value, (int, float)):
+        return float(value)
+    if isinstance(value, str):
+        s = value.strip()
+        s = s.replace("$", "").replace(",", "")
+        m = re.match(r"^([0-9]*\\.?[0-9]+)m$", s, re.IGNORECASE)
+        if m:
+            return float(m.group(1)) * 1_000_000
+        try:
+            return float(s)
+        except ValueError:
+            return None
+    return None
 
 
 def _dedupe_urls(urls: List[str]) -> List[str]:
@@ -52,7 +74,7 @@ async def start_parse(request: ZillowParseRequest):
     
     # Импортируем и запускаем парсер
     from services.zillow_parser import start_zillow_parse_job
-    start_zillow_parse_job(job_id, valid_urls)
+    start_zillow_parse_job(job_id, valid_urls, headless=request.headless)
     
     return {"job_id": job_id, "status": "started", "total_urls": len(valid_urls)}
 
@@ -151,8 +173,9 @@ async def get_homes(
     
     cursor.execute(f"""
         SELECT h.id, h.job_id, h.zpid, h.address, h.city, h.state, h.zipcode, 
-               h.price, h.beds, h.baths, h.area_sqft, h.lot_size, h.year_built,
-               h.home_type, h.latitude, h.longitude, h.created_at
+               h.price, h.price_formatted, h.beds, h.baths, h.area_sqft, h.lot_size, h.year_built,
+               h.home_type, h.date_sold, h.latitude, h.longitude, h.zestimate, h.tax_assessed_value,
+               h.has_image, h.detail_url, h.sold_date_text, h.created_at
         FROM zillow_homes h
         WHERE {where}
         ORDER BY h.created_at DESC
@@ -163,9 +186,18 @@ async def get_homes(
     cursor.execute(f"SELECT COUNT(*) FROM zillow_homes h WHERE {where}", params)
     total = cursor.fetchone()["COUNT(*)"]
     
+    # Нормализуем price -> float, has_image -> bool
+    normalized_homes = []
+    for h in homes:
+        h = dict(h)
+        h["price"] = _parse_price(h.get("price"))
+        if h.get("has_image") is not None:
+            h["has_image"] = bool(h["has_image"])
+        normalized_homes.append(h)
+    
     conn.close()
     
-    return ZillowHomesResponse(homes=[ZillowHome(**h) for h in homes], total=total)
+    return ZillowHomesResponse(homes=[ZillowHome(**h) for h in normalized_homes], total=total)
 
 
 @router.get("/stats", response_model=ZillowStats)
@@ -176,6 +208,7 @@ async def get_stats(
 ):
     """Статистика по домам"""
     conn = get_connection()
+    conn.row_factory = dict_factory
     cursor = conn.cursor()
     
     conditions = []
@@ -192,44 +225,68 @@ async def get_stats(
     
     where = " AND ".join(conditions) if conditions else "1=1"
     
+    # Счётчики (кроме цен) можно взять агрегатами
     cursor.execute(f"""
         SELECT 
             COUNT(*) as total,
             COUNT(DISTINCT zpid) as unique_count,
-            AVG(price) as avg_price,
-            MIN(price) as min_price,
-            MAX(price) as max_price,
             AVG(beds) as avg_beds,
             AVG(baths) as avg_baths,
             AVG(area_sqft) as avg_area
         FROM zillow_homes
-        WHERE {where} AND price IS NOT NULL
+        WHERE {where}
     """, params)
     row = cursor.fetchone()
+    
+    # Цены — приводим к float в Python, чтобы не падать на строках "$740,000" или "1.00M"
+    cursor.execute(f"SELECT price FROM zillow_homes WHERE {where}", params)
+    price_rows = cursor.fetchall()
+    prices = []
+    for pr_row in price_rows:
+        # С dict_factory это словарь, иначе кортеж
+        raw_price = pr_row.get("price") if isinstance(pr_row, dict) else (pr_row[0] if isinstance(pr_row, tuple) else pr_row)
+        val = _parse_price(raw_price)
+        if val is not None:
+            prices.append(val)
+    
     conn.close()
     
+    avg_price = round(sum(prices) / len(prices), 2) if prices else 0
+    min_price = min(prices) if prices else None
+    max_price = max(prices) if prices else None
+    
+    # С dict_factory row - это словарь
+    row_dict = row if isinstance(row, dict) else {
+        "total": row[0] if len(row) > 0 else 0,
+        "unique_count": row[1] if len(row) > 1 else 0,
+        "avg_beds": row[2] if len(row) > 2 else 0,
+        "avg_baths": row[3] if len(row) > 3 else 0,
+        "avg_area": row[4] if len(row) > 4 else 0,
+    }
+    
     return ZillowStats(
-        total=row[0] or 0,
-        unique_count=row[1] or 0,
-        avg_price=round(row[2], 2) if row[2] else 0,
-        min_price=row[3],
-        max_price=row[4],
-        avg_beds=round(row[5], 1) if row[5] else 0,
-        avg_baths=round(row[6], 1) if row[6] else 0,
-        avg_area_sqft=round(row[7], 0) if row[7] else 0,
+        total=row_dict.get("total") or 0,
+        unique_count=row_dict.get("unique_count") or 0,
+        avg_price=avg_price,
+        min_price=min_price,
+        max_price=max_price,
+        avg_beds=round(row_dict.get("avg_beds") or 0, 1),
+        avg_baths=round(row_dict.get("avg_baths") or 0, 1),
+        avg_area_sqft=round(row_dict.get("avg_area") or 0, 0),
     )
 
 
 @router.get("/export/{job_id}")
-async def export_job(job_id: int, format: str = Query(default="csv", enum=["csv", "json"])):
-    """Экспорт результатов в CSV или JSON"""
+async def export_job(job_id: int, format: str = Query(default="csv", enum=["csv", "json", "xlsx"])):
+    """Экспорт результатов в CSV, JSON или Excel"""
     conn = get_connection()
     conn.row_factory = dict_factory
     cursor = conn.cursor()
     
     cursor.execute("""
-        SELECT zpid, address, city, state, zipcode, price, beds, baths, 
-               area_sqft, lot_size, year_built, home_type, latitude, longitude, created_at
+        SELECT zpid, address, city, state, zipcode, price, price_formatted, beds, baths, 
+               area_sqft, lot_size, year_built, home_type, date_sold, latitude, longitude,
+               zestimate, tax_assessed_value, has_image, detail_url, sold_date_text, created_at
         FROM zillow_homes
         WHERE job_id = ?
         ORDER BY created_at DESC
@@ -251,18 +308,34 @@ async def export_job(job_id: int, format: str = Query(default="csv", enum=["csv"
             media_type="text/csv",
             headers={"Content-Disposition": f"attachment; filename=zillow_job_{job_id}.csv"}
         )
+    elif format == "xlsx":
+        excel_bytes = create_formatted_excel(
+            homes,
+            sheet_name="Zillow Homes",
+            currency_columns=["price", "zestimate", "tax_assessed_value"],
+            header_bg="2563EB",
+        )
+        return Response(
+            content=excel_bytes,
+            media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+            headers={"Content-Disposition": f"attachment; filename=zillow_job_{job_id}.xlsx"}
+        )
     else:
         return {"homes": homes}
 
 
 @router.get("/export")
 async def export_all(
-    format: str = Query(default="csv", enum=["csv", "json"]),
+    format: str = Query(default="csv", enum=["csv", "json", "xlsx"]),
     city: Optional[str] = None,
+    state: Optional[str] = None,
     min_price: Optional[float] = None,
-    max_price: Optional[float] = None
+    max_price: Optional[float] = None,
+    min_beds: Optional[int] = None,
+    max_beds: Optional[int] = None,
+    search: Optional[str] = None,
 ):
-    """Экспорт всех домов с фильтрами"""
+    """Экспорт всех домов с фильтрами (CSV, JSON, Excel)"""
     conn = get_connection()
     conn.row_factory = dict_factory
     cursor = conn.cursor()
@@ -273,18 +346,31 @@ async def export_all(
     if city:
         conditions.append("LOWER(city) LIKE ?")
         params.append(f"%{city.lower()}%")
+    if state:
+        conditions.append("LOWER(state) = ?")
+        params.append(state.lower())
     if min_price is not None:
         conditions.append("price >= ?")
         params.append(min_price)
     if max_price is not None:
         conditions.append("price <= ?")
         params.append(max_price)
+    if min_beds is not None:
+        conditions.append("beds >= ?")
+        params.append(min_beds)
+    if max_beds is not None:
+        conditions.append("beds <= ?")
+        params.append(max_beds)
+    if search:
+        conditions.append("(address LIKE ? OR zipcode LIKE ? OR zpid LIKE ?)")
+        params.extend([f"%{search}%", f"%{search}%", f"%{search}%"])
     
     where = " AND ".join(conditions) if conditions else "1=1"
     
     cursor.execute(f"""
-        SELECT zpid, address, city, state, zipcode, price, beds, baths, 
-               area_sqft, lot_size, year_built, home_type, latitude, longitude, created_at
+        SELECT zpid, address, city, state, zipcode, price, price_formatted, beds, baths, 
+               area_sqft, lot_size, year_built, home_type, date_sold, latitude, longitude,
+               zestimate, tax_assessed_value, has_image, detail_url, sold_date_text, created_at
         FROM zillow_homes
         WHERE {where}
         ORDER BY created_at DESC
@@ -308,5 +394,68 @@ async def export_all(
             media_type="text/csv",
             headers={"Content-Disposition": f"attachment; filename=zillow_export_{timestamp}.csv"}
         )
+    elif format == "xlsx":
+        excel_bytes = create_formatted_excel(
+            homes,
+            sheet_name="Zillow Homes",
+            currency_columns=["price", "zestimate", "tax_assessed_value"],
+            header_bg="2563EB",
+        )
+        return Response(
+            content=excel_bytes,
+            media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+            headers={"Content-Disposition": f"attachment; filename=zillow_export_{timestamp}.xlsx"}
+        )
     else:
         return {"homes": homes, "total": len(homes)}
+
+
+@router.post("/jobs/{job_id}/cancel")
+async def cancel_zillow_job(job_id: int):
+    """Остановить задачу парсинга Zillow"""
+    conn = get_connection()
+    conn.row_factory = dict_factory
+    cursor = conn.cursor()
+    
+    cursor.execute("SELECT id, status FROM zillow_jobs WHERE id = ?", (job_id,))
+    job = cursor.fetchone()
+    
+    if not job:
+        conn.close()
+        raise HTTPException(status_code=404, detail="Job not found")
+    
+    if job["status"] not in ("running", "pending", "parsing", "waiting_captcha"):
+        conn.close()
+        raise HTTPException(status_code=400, detail=f"Cannot cancel job with status '{job['status']}'")
+    
+    cursor.execute("""
+        UPDATE zillow_jobs SET status = 'cancelled', completed_at = ?
+        WHERE id = ?
+    """, (datetime.now().isoformat(), job_id))
+    conn.commit()
+    conn.close()
+    
+    return {"status": "cancelled", "job_id": job_id}
+
+
+@router.delete("/jobs/{job_id}")
+async def delete_zillow_job(job_id: int):
+    """Удалить задачу и связанные дома"""
+    conn = get_connection()
+    conn.row_factory = dict_factory
+    cursor = conn.cursor()
+    
+    cursor.execute("SELECT id FROM zillow_jobs WHERE id = ?", (job_id,))
+    job = cursor.fetchone()
+    
+    if not job:
+        conn.close()
+        raise HTTPException(status_code=404, detail="Job not found")
+    
+    cursor.execute("DELETE FROM zillow_homes WHERE job_id = ?", (job_id,))
+    homes_deleted = cursor.rowcount
+    cursor.execute("DELETE FROM zillow_jobs WHERE id = ?", (job_id,))
+    conn.commit()
+    conn.close()
+    
+    return {"status": "deleted", "job_id": job_id, "homes_deleted": homes_deleted}

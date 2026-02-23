@@ -27,6 +27,16 @@ const router = createRouter({
       path: '/data',
       name: 'data',
       component: () => import('../views/AllData.vue')
+    },
+    {
+      path: '/mybuildingpermit',
+      name: 'mybuildingpermit',
+      component: () => import('../views/MyBuildingPermit.vue')
+    },
+    {
+      path: '/email',
+      name: 'email',
+      component: () => import('../views/EmailDistribution.vue')
     }
   ]
 })

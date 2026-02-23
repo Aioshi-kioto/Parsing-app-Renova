@@ -3,6 +3,7 @@
 import asyncio
 import json
 import logging
+import sys
 import time
 from typing import Dict, Any, List, Optional
 from playwright.async_api import async_playwright, Browser, Page, BrowserContext, Response, Playwright
@@ -237,21 +238,60 @@ class ZillowPlaywrightScraper:
         filters: Dict[str, Any],
     ) -> str:
         """Строит URL для поиска на Zillow"""
-        # Создаем filterState
-        filter_state = {
-            "sortSelection": {"value": "globalrelevanceex"},
-            "isNewConstruction": {"value": False},
-            "isForSaleForeclosure": {"value": False},
-            "isForSaleByOwner": {"value": False},
-            "isForSaleByAgent": {"value": False},
-            "isForRent": {"value": False},
-            "isComingSoon": {"value": False},
-            "isAuction": {"value": False},
-            "isAllHomes": {"value": True},
-            "isRecentlySold": {"value": True},
-        }
+        import copy
+        import urllib.parse
+
+        # Если передали исходный searchQueryState из пользовательского URL — используем его как базу.
+        raw_sqs = filters.get("_raw_search_query_state")
+        if isinstance(raw_sqs, dict) and raw_sqs:
+            search_query_state = copy.deepcopy(raw_sqs)
+            # Жёстко переопределяем bounds/zoom под текущий тайл QuadTree
+            search_query_state["pagination"] = {}
+            search_query_state["mapBounds"] = {
+                "north": north,
+                "south": south,
+                "east": east,
+                "west": west,
+            }
+            search_query_state["mapZoom"] = zoom
+            search_query_state["isMapVisible"] = True
+            search_query_state["isListVisible"] = True
+
+            # Гарантируем наличие filterState
+            if not isinstance(search_query_state.get("filterState"), dict):
+                search_query_state["filterState"] = {}
+
+            filter_state = search_query_state["filterState"]
+        else:
+            # Иначе — дефолтный filterState
+            filter_state = {
+                "sortSelection": {"value": "globalrelevanceex"},
+                "isNewConstruction": {"value": False},
+                "isForSaleForeclosure": {"value": False},
+                "isForSaleByOwner": {"value": False},
+                "isForSaleByAgent": {"value": False},
+                "isForRent": {"value": False},
+                "isComingSoon": {"value": False},
+                "isAuction": {"value": False},
+                "isAllHomes": {"value": True},
+                "isRecentlySold": {"value": True},
+            }
+            # Создаем searchQueryState
+            search_query_state = {
+                "pagination": {},
+                "mapBounds": {
+                    "north": north,
+                    "south": south,
+                    "east": east,
+                    "west": west,
+                },
+                "mapZoom": zoom,
+                "isMapVisible": True,
+                "isListVisible": True,
+                "filterState": filter_state,
+            }
         
-        # Добавляем фильтры
+        # Добавляем/переопределяем фильтры (минимальный набор), не ломая исходный filterState
         if filters.get("basement_unfinished"):
             filter_state["basement"] = {"value": ["unfinished"]}
         
@@ -263,24 +303,8 @@ class ZillowPlaywrightScraper:
         
         if filters.get("min_price"):
             filter_state["price"] = {"min": filters["min_price"]}
-        
-        # Создаем searchQueryState
-        search_query_state = {
-            "pagination": {},
-            "mapBounds": {
-                "north": north,
-                "south": south,
-                "east": east,
-                "west": west,
-            },
-            "mapZoom": zoom,
-            "isMapVisible": True,
-            "isListVisible": True,
-            "filterState": filter_state,
-        }
-        
+
         # Кодируем в URL
-        import urllib.parse
         query_string = urllib.parse.quote(json.dumps(search_query_state))
         url = f"https://www.zillow.com/homes/?searchQueryState={query_string}"
         
@@ -487,25 +511,9 @@ class ZillowPlaywrightScraper:
                 # Имитация человеческого поведения
                 await self.simulate_human_behavior(page)
                 
-                # КРИТИЧЕСКАЯ ПАУЗА: Ждем, пока пользователь пройдет капчу вручную
-                logger.info("=" * 80)
-                logger.info("ПАУЗА ДЛЯ РУЧНОГО ПРОХОЖДЕНИЯ КАПЧИ")
-                logger.info("=" * 80)
-                logger.info("Пожалуйста, в открывшемся окне браузера:")
-                logger.info("  1. Пройдите капчу Zillow (если появилась)")
-                logger.info("  2. Убедитесь, что страница полностью загрузилась")
-                logger.info("  3. Нажмите Enter в этой консоли, чтобы продолжить")
-                logger.info("=" * 80)
-                
-                if self.manual_mode or self.wait_for_manual:
-                    try:
-                        input("\n[ОЖИДАНИЕ] Нажмите Enter после прохождения капчи...")
-                        logger.info("[MANUAL] Продолжаем парсинг...")
-                    except EOFError:
-                        logger.warning("[MANUAL] Интерактивный режим недоступен, пропускаем паузу")
-                
-                # Дополнительное ожидание после ручного вмешательства
-                await page.wait_for_timeout(3000)  # 3 секунды
+                # Раньше здесь была ручная пауза для капчи (input()).
+                # По требованию — полностью автоматический режим без ожиданий.
+                await page.wait_for_timeout(1500)
                 
                 # Проверяем капчу еще раз
                 await self.handle_captcha(page)
@@ -845,10 +853,33 @@ def search_sold_playwright_sync(
         manual_mode: Режим с паузами для ручного вмешательства
         wait_for_manual: Ожидание нажатия Enter на каждом шаге (для прохождения капчи вручную)
     """
-    return asyncio.run(search_sold_playwright(
-        north, south, west, east, zoom, filters, 
-        headless, proxy_url, slow_mo, manual_mode, wait_for_manual
-    ))
+    # Windows: если вызываем из worker-thread, стандартный loop может не поддерживать subprocess -> Playwright падает.
+    if sys.platform.startswith("win"):
+        try:
+            asyncio.set_event_loop_policy(asyncio.WindowsProactorEventLoopPolicy())  # type: ignore[attr-defined]
+            loop = asyncio.new_event_loop()
+            asyncio.set_event_loop(loop)
+            try:
+                return loop.run_until_complete(
+                    search_sold_playwright(
+                        north, south, west, east, zoom, filters,
+                        headless, proxy_url, slow_mo, manual_mode, wait_for_manual
+                    )
+                )
+            finally:
+                try:
+                    loop.close()
+                except Exception:
+                    pass
+        except Exception:
+            pass
+
+    return asyncio.run(
+        search_sold_playwright(
+            north, south, west, east, zoom, filters,
+            headless, proxy_url, slow_mo, manual_mode, wait_for_manual
+        )
+    )
 
 
 async def search_from_url_playwright(
@@ -891,16 +922,50 @@ def search_from_url_playwright_sync(
     manual_mode: bool = True,
     wait_for_manual: bool = True,
 ) -> Dict[str, Any]:
-    """Синхронная обертка для search_from_url_playwright
-    
-    Args:
-        zillow_url: URL страницы поиска Zillow с настроенными фильтрами
-        headless: Запускать браузер в headless режиме (False = показывать браузер для прохождения капчи)
-        proxy_url: URL прокси (опционально)
-        slow_mo: Задержка между действиями в миллисекундах (3000 = 3 секунды, рекомендуется для без прокси)
-        manual_mode: Режим с паузами для ручного вмешательства
-        wait_for_manual: Ожидание нажатия Enter для прохождения капчи вручную
+    """Синхронная обертка для search_from_url_playwright.
+
+    ВАЖНО (Windows):
+    - Этот код часто вызывается из рабочего потока (ThreadPoolExecutor) в backend.
+    - На Windows в дополнительных потоках по умолчанию создаётся SelectorEventLoop,
+      который не поддерживает subprocess_exec и ломает Playwright
+      с ошибкой NotImplementedError при запуске браузера.
+    - Здесь мы принудительно создаём совместимый event loop и запускаем корутину вручную.
     """
-    return asyncio.run(search_from_url_playwright(
-        zillow_url, headless, proxy_url, slow_mo, manual_mode, wait_for_manual
-    ))
+    # Для Windows: в worker-thread по умолчанию SelectorEventLoop -> subprocess не работает -> Playwright падает.
+    # Поэтому принудительно используем Proactor policy и отдельный event loop.
+    if sys.platform.startswith("win"):
+        try:
+            asyncio.set_event_loop_policy(asyncio.WindowsProactorEventLoopPolicy())  # type: ignore[attr-defined]
+            loop = asyncio.new_event_loop()
+            asyncio.set_event_loop(loop)
+            try:
+                return loop.run_until_complete(
+                    search_from_url_playwright(
+                        zillow_url,
+                        headless,
+                        proxy_url,
+                        slow_mo,
+                        manual_mode,
+                        wait_for_manual,
+                    )
+                )
+            finally:
+                try:
+                    loop.close()
+                except Exception:
+                    pass
+        except Exception:
+            # Fallback: если что-то пошло не так, пробуем стандартный asyncio.run
+            pass
+
+    # Unix или fallback — стандартный путь
+    return asyncio.run(
+        search_from_url_playwright(
+            zillow_url,
+            headless,
+            proxy_url,
+            slow_mo,
+            manual_mode,
+            wait_for_manual,
+        )
+    )

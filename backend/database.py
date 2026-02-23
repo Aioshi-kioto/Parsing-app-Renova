@@ -49,20 +49,42 @@ def init_database():
             state TEXT,
             zipcode TEXT,
             price REAL,
+            price_formatted TEXT,
             beds INTEGER,
             baths REAL,
             area_sqft INTEGER,
-            lot_size INTEGER,
+            lot_size REAL,
             year_built INTEGER,
             home_type TEXT,
             latitude REAL,
             longitude REAL,
+            date_sold TEXT,
+            sold_date_text TEXT,
+            zestimate REAL,
+            tax_assessed_value REAL,
+            has_image INTEGER,
+            detail_url TEXT,
             raw_data TEXT,
             created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
             FOREIGN KEY (job_id) REFERENCES zillow_jobs(id),
             UNIQUE(zpid)
         )
     """)
+    
+    # Миграция: добавить новые колонки если таблица уже существует
+    for col, col_type in [
+        ("price_formatted", "TEXT"),
+        ("date_sold", "TEXT"),
+        ("sold_date_text", "TEXT"),
+        ("zestimate", "REAL"),
+        ("tax_assessed_value", "REAL"),
+        ("has_image", "INTEGER"),
+        ("detail_url", "TEXT"),
+    ]:
+        try:
+            cursor.execute(f"ALTER TABLE zillow_homes ADD COLUMN {col} {col_type}")
+        except sqlite3.OperationalError:
+            pass  # колонка уже есть
     
     # ===============================
     # PERMIT ТАБЛИЦЫ
@@ -139,6 +161,82 @@ def init_database():
     cursor.execute("CREATE INDEX IF NOT EXISTS idx_permits_city ON permits(city)")
     cursor.execute("CREATE INDEX IF NOT EXISTS idx_permit_jobs_status ON permit_jobs(status)")
     
+    # ===============================
+    # MYBUILDINGPERMIT ТАБЛИЦЫ
+    # ===============================
+    
+    # Таблица mbp_jobs - задачи парсинга MyBuildingPermit
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS mbp_jobs (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            status TEXT NOT NULL DEFAULT 'pending',
+            jurisdictions TEXT,
+            days_back INTEGER DEFAULT 7,
+            date_from_str TEXT,
+            date_to_str TEXT,
+            total_permits INTEGER DEFAULT 0,
+            analyzed_count INTEGER DEFAULT 0,
+            owner_builders_found INTEGER DEFAULT 0,
+            elapsed_seconds REAL,
+            current_jurisdiction TEXT,
+            error_message TEXT,
+            started_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+            completed_at DATETIME
+        )
+    """)
+    
+    # Таблица mbp_permits - пермиты из MyBuildingPermit
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS mbp_permits (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            job_id INTEGER,
+            permit_number TEXT NOT NULL,
+            jurisdiction TEXT,
+            project_name TEXT,
+            description TEXT,
+            permit_type TEXT,
+            permit_status TEXT,
+            address TEXT,
+            parcel TEXT,
+            applied_date TEXT,
+            issued_date TEXT,
+            applicant_name TEXT,
+            contractor_name TEXT,
+            contractor_license TEXT,
+            is_owner_builder INTEGER DEFAULT 0,
+            matches_target_type INTEGER DEFAULT 0,
+            permit_url TEXT,
+            created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY (job_id) REFERENCES mbp_jobs(id),
+            UNIQUE(permit_number, jurisdiction)
+        )
+    """)
+    
+    # Миграция mbp_jobs: новые колонки
+    for col, col_type in [
+        ("date_from_str", "TEXT"),
+        ("date_to_str", "TEXT"),
+        ("analyzed_count", "INTEGER"),
+        ("elapsed_seconds", "REAL"),
+        ("current_jurisdiction", "TEXT"),
+    ]:
+        try:
+            cursor.execute(f"ALTER TABLE mbp_jobs ADD COLUMN {col} {col_type}")
+        except sqlite3.OperationalError:
+            pass
+
+    # Миграция: matches_target_type в mbp_permits (для существующих БД)
+    try:
+        cursor.execute("ALTER TABLE mbp_permits ADD COLUMN matches_target_type INTEGER DEFAULT 0")
+    except sqlite3.OperationalError:
+        pass
+
+    # MyBuildingPermit индексы
+    cursor.execute("CREATE INDEX IF NOT EXISTS idx_mbp_permits_job_id ON mbp_permits(job_id)")
+    cursor.execute("CREATE INDEX IF NOT EXISTS idx_mbp_permits_jurisdiction ON mbp_permits(jurisdiction)")
+    cursor.execute("CREATE INDEX IF NOT EXISTS idx_mbp_permits_is_owner_builder ON mbp_permits(is_owner_builder)")
+    cursor.execute("CREATE INDEX IF NOT EXISTS idx_mbp_jobs_status ON mbp_jobs(status)")
+    
     conn.commit()
     conn.close()
     
@@ -197,11 +295,15 @@ def insert_zillow_home(job_id: int, home_data: Dict[str, Any]) -> bool:
     conn = get_connection()
     cursor = conn.cursor()
     try:
+        has_img = home_data.get('has_image')
+        if isinstance(has_img, bool):
+            has_img = 1 if has_img else 0
         cursor.execute("""
             INSERT OR IGNORE INTO zillow_homes 
-            (job_id, zpid, address, city, state, zipcode, price, beds, baths, 
-             area_sqft, lot_size, year_built, home_type, latitude, longitude, raw_data)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            (job_id, zpid, address, city, state, zipcode, price, price_formatted, beds, baths, 
+             area_sqft, lot_size, year_built, home_type, latitude, longitude,
+             date_sold, sold_date_text, zestimate, tax_assessed_value, has_image, detail_url, raw_data)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         """, (
             job_id,
             home_data.get('zpid'),
@@ -210,6 +312,7 @@ def insert_zillow_home(job_id: int, home_data: Dict[str, Any]) -> bool:
             home_data.get('state'),
             home_data.get('zipcode'),
             home_data.get('price'),
+            home_data.get('price_formatted'),
             home_data.get('beds'),
             home_data.get('baths'),
             home_data.get('area_sqft'),
@@ -218,6 +321,12 @@ def insert_zillow_home(job_id: int, home_data: Dict[str, Any]) -> bool:
             home_data.get('home_type'),
             home_data.get('latitude'),
             home_data.get('longitude'),
+            home_data.get('date_sold'),
+            home_data.get('sold_date_text'),
+            home_data.get('zestimate'),
+            home_data.get('tax_assessed_value'),
+            has_img,
+            home_data.get('detail_url'),
             json.dumps(home_data.get('raw_data', {})) if home_data.get('raw_data') else None
         ))
         inserted = cursor.rowcount > 0
@@ -321,12 +430,19 @@ def insert_permit(job_id: int, permit_data: Dict[str, Any]) -> bool:
 
 
 def update_permit_verification(permit_num: str, is_owner_builder: Optional[bool], 
-                               work_performer_text: str = None):
-    """Обновить статус верификации пермита"""
+                               work_performer_text: str = None,
+                               verification_error: str = None):
+    """Обновить статус верификации пермита.
+    verification_error: если верификация не выполнялась (например Playwright недоступен).
+    """
     conn = get_connection()
     cursor = conn.cursor()
     
-    verification_status = 'verified' if is_owner_builder is not None else 'unknown'
+    if verification_error:
+        verification_status = 'error'
+        work_performer_text = (verification_error[:500] if verification_error else None)
+    else:
+        verification_status = 'verified' if is_owner_builder is not None else 'unknown'
     
     cursor.execute("""
         UPDATE permits SET 
@@ -343,6 +459,88 @@ def update_permit_verification(permit_num: str, is_owner_builder: Optional[bool]
     ))
     conn.commit()
     conn.close()
+
+
+# ===============================
+# MYBUILDINGPERMIT ОПЕРАЦИИ
+# ===============================
+
+def create_mbp_job(jurisdictions: List[str], days_back: int = 30) -> int:
+    """Создать задачу парсинга MyBuildingPermit"""
+    conn = get_connection()
+    cursor = conn.cursor()
+    cursor.execute("""
+        INSERT INTO mbp_jobs (jurisdictions, days_back, status)
+        VALUES (?, ?, 'pending')
+    """, (json.dumps(jurisdictions), days_back))
+    job_id = cursor.lastrowid
+    conn.commit()
+    conn.close()
+    return job_id
+
+
+def update_mbp_job(job_id: int, **kwargs):
+    """Обновить задачу парсинга MyBuildingPermit"""
+    conn = get_connection()
+    cursor = conn.cursor()
+    
+    updates = []
+    params = []
+    for key, value in kwargs.items():
+        updates.append(f"{key} = ?")
+        params.append(value)
+    params.append(job_id)
+    
+    cursor.execute(f"""
+        UPDATE mbp_jobs SET {', '.join(updates)} WHERE id = ?
+    """, params)
+    conn.commit()
+    conn.close()
+
+
+def insert_mbp_permit(job_id: int, permit_data: Dict[str, Any]) -> bool:
+    """Вставить пермит MyBuildingPermit (обновить если существует)"""
+    conn = get_connection()
+    cursor = conn.cursor()
+    try:
+        cursor.execute("""
+            INSERT INTO mbp_permits 
+            (job_id, permit_number, jurisdiction, project_name, description,
+             permit_type, permit_status, address, parcel, applied_date, issued_date,
+             applicant_name, contractor_name, contractor_license, is_owner_builder, matches_target_type, permit_url)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            ON CONFLICT(permit_number, jurisdiction) DO UPDATE SET
+                job_id = excluded.job_id,
+                project_name = excluded.project_name,
+                permit_status = excluded.permit_status,
+                is_owner_builder = excluded.is_owner_builder,
+                matches_target_type = excluded.matches_target_type
+        """, (
+            job_id,
+            permit_data.get('permit_number'),
+            permit_data.get('jurisdiction'),
+            permit_data.get('project_name'),
+            permit_data.get('description'),
+            permit_data.get('permit_type'),
+            permit_data.get('permit_status'),
+            permit_data.get('address'),
+            permit_data.get('parcel'),
+            permit_data.get('applied_date'),
+            permit_data.get('issued_date'),
+            permit_data.get('applicant_name'),
+            permit_data.get('contractor_name'),
+            permit_data.get('contractor_license'),
+            1 if permit_data.get('is_owner_builder') else 0,
+            1 if permit_data.get('matches_target_type') else 0,
+            permit_data.get('permit_url')
+        ))
+        conn.commit()
+        return True
+    except Exception as e:
+        print(f"Error inserting MBP permit: {e}")
+        return False
+    finally:
+        conn.close()
 
 
 # ===============================
@@ -374,11 +572,20 @@ def get_overview_stats() -> Dict[str, Any]:
     cursor.execute("SELECT SUM(est_project_cost) FROM permits WHERE est_project_cost IS NOT NULL")
     total_project_cost = cursor.fetchone()[0] or 0
     
+    # MBP статистика
+    cursor.execute("SELECT COUNT(*) FROM mbp_permits")
+    mbp_total_permits = cursor.fetchone()[0]
+    
+    cursor.execute("SELECT COUNT(*) FROM mbp_permits WHERE is_owner_builder = 1")
+    mbp_owner_builders = cursor.fetchone()[0]
+    
     # Последние задачи
     cursor.execute("""
         SELECT 'zillow' as type, id, status, started_at FROM zillow_jobs
         UNION ALL
         SELECT 'permit' as type, id, status, started_at FROM permit_jobs
+        UNION ALL
+        SELECT 'mbp' as type, id, status, started_at FROM mbp_jobs
         ORDER BY started_at DESC LIMIT 5
     """)
     recent_jobs = cursor.fetchall()
@@ -395,6 +602,10 @@ def get_overview_stats() -> Dict[str, Any]:
             "total_permits": total_permits,
             "owner_builders": owner_builders,
             "total_project_cost": round(total_project_cost, 2)
+        },
+        "mbp": {
+            "total_permits": mbp_total_permits,
+            "owner_builders": mbp_owner_builders
         },
         "recent_jobs": [
             {"type": r[0], "id": r[1], "status": r[2], "started_at": r[3]}

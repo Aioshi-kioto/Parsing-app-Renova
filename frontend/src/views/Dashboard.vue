@@ -7,12 +7,12 @@
         <div class="flex items-center justify-between">
           <div>
             <p class="text-sm font-medium text-gray-500">Zillow Homes</p>
-            <p class="text-2xl font-bold text-gray-900 mt-1">{{ stats.zillow?.total_homes || 0 }}</p>
+            <p class="text-2xl font-bold text-gray-900 mt-1">{{ numberOrZero(stats.zillow?.total_homes) }}</p>
             <p class="text-sm text-gray-500 mt-1">
-              {{ stats.zillow?.unique_homes || 0 }} unique
+              {{ numberOrZero(stats.zillow?.unique_homes) }} unique
             </p>
           </div>
-          <div class="w-12 h-12 bg-blue-100 rounded-xl flex items-center justify-center">
+          <div class="w-12 h-12 bg-gray-100 rounded-xl flex items-center justify-center">
             <svg class="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
                 d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/>
@@ -21,7 +21,7 @@
         </div>
       </div>
 
-      <!-- Avg Price -->
+      <!-- Avg Home Price (Zillow) -->
       <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
         <div class="flex items-center justify-between">
           <div>
@@ -38,16 +38,18 @@
         </div>
       </div>
 
-      <!-- Total Permits -->
+      <!-- Building Permits (Seattle) -->
       <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
         <div class="flex items-center justify-between">
           <div>
             <p class="text-sm font-medium text-gray-500">Building Permits</p>
-            <p class="text-2xl font-bold text-gray-900 mt-1">{{ stats.permits?.total_permits || 0 }}</p>
-            <p class="text-sm text-gray-500 mt-1">Seattle area</p>
+            <p class="text-2xl font-bold text-gray-900 mt-1">{{ numberOrZero(stats.permits?.total_permits) }}</p>
+            <p class="text-sm text-gray-500 mt-1">
+              {{ numberOrZero(stats.permits?.owner_builders) }} owner-builders · {{ formatPrice(stats.permits?.total_project_cost) }} total
+            </p>
           </div>
-          <div class="w-12 h-12 bg-purple-100 rounded-xl flex items-center justify-center">
-            <svg class="w-6 h-6 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <div class="w-12 h-12 bg-teal-100 rounded-xl flex items-center justify-center">
+            <svg class="w-6 h-6 text-teal-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
                 d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
             </svg>
@@ -55,20 +57,20 @@
         </div>
       </div>
 
-      <!-- Owner Builders -->
+      <!-- MyBuildingPermit -->
       <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
         <div class="flex items-center justify-between">
           <div>
-            <p class="text-sm font-medium text-gray-500">Owner-Builders</p>
-            <p class="text-2xl font-bold text-gray-900 mt-1">{{ stats.permits?.owner_builders || 0 }}</p>
+            <p class="text-sm font-medium text-gray-500">MyBuildingPermit</p>
+            <p class="text-2xl font-bold text-gray-900 mt-1">{{ numberOrZero(stats.mbp?.total_permits) }}</p>
             <p class="text-sm text-gray-500 mt-1">
-              {{ formatPrice(stats.permits?.total_project_cost) }} total
+              {{ numberOrZero(stats.mbp?.owner_builders) }} owner-builders
             </p>
           </div>
-          <div class="w-12 h-12 bg-amber-100 rounded-xl flex items-center justify-center">
-            <svg class="w-6 h-6 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <div class="w-12 h-12 bg-purple-100 rounded-xl flex items-center justify-center">
+            <svg class="w-6 h-6 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
-                d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>
+                d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/>
             </svg>
           </div>
         </div>
@@ -85,7 +87,7 @@
             to="/zillow" 
             class="flex items-center gap-3 p-4 rounded-lg border border-gray-200 hover:border-blue-300 hover:bg-blue-50 transition-colors"
           >
-            <div class="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
+            <div class="w-10 h-10 bg-gray-100 rounded-lg flex items-center justify-center">
               <svg class="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"/>
               </svg>
@@ -98,6 +100,21 @@
 
           <router-link 
             to="/permits" 
+            class="flex items-center gap-3 p-4 rounded-lg border border-gray-200 hover:border-gray-300 hover:bg-gray-50 transition-colors"
+          >
+            <div class="w-10 h-10 bg-gray-100 rounded-lg flex items-center justify-center">
+              <svg class="w-5 h-5 text-gray-900" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"/>
+              </svg>
+            </div>
+            <div>
+              <p class="font-medium text-gray-900">New Permit Parse</p>
+              <p class="text-sm text-gray-500">Find owner-builders</p>
+            </div>
+          </router-link>
+
+          <router-link 
+            to="/mybuildingpermit" 
             class="flex items-center gap-3 p-4 rounded-lg border border-gray-200 hover:border-purple-300 hover:bg-purple-50 transition-colors"
           >
             <div class="w-10 h-10 bg-purple-100 rounded-lg flex items-center justify-center">
@@ -106,8 +123,8 @@
               </svg>
             </div>
             <div>
-              <p class="font-medium text-gray-900">New Permit Parse</p>
-              <p class="text-sm text-gray-500">Find owner-builders</p>
+              <p class="font-medium text-gray-900">MyBuildingPermit</p>
+              <p class="text-sm text-gray-500">Parse WA permits</p>
             </div>
           </router-link>
 
@@ -158,15 +175,15 @@
             <div class="flex items-center gap-3">
               <div 
                 class="w-8 h-8 rounded-lg flex items-center justify-center"
-                :class="job.type === 'zillow' ? 'bg-blue-100' : 'bg-purple-100'"
+                :class="job.type === 'zillow' ? 'bg-gray-100' : 'bg-gray-100'"
               >
-                <span class="text-xs font-bold" :class="job.type === 'zillow' ? 'text-blue-600' : 'text-purple-600'">
-                  {{ job.type === 'zillow' ? 'Z' : 'P' }}
+                <span class="text-xs font-bold" :class="job.type === 'zillow' ? 'text-blue-600' : job.type === 'mbp' ? 'text-purple-600' : 'text-gray-900'">
+                  {{ job.type === 'zillow' ? 'Z' : job.type === 'mbp' ? 'MBP' : 'P' }}
                 </span>
               </div>
               <div>
                 <p class="text-sm font-medium text-gray-900">
-                  {{ job.type === 'zillow' ? 'Zillow Parse' : 'Permit Parse' }} #{{ job.id }}
+                  {{ jobLabel(job.type) }} #{{ job.id }}
                 </p>
                 <p class="text-xs text-gray-500">{{ formatDate(job.started_at) }}</p>
               </div>
@@ -183,21 +200,12 @@
     </div>
 
     <!-- Info Banner -->
-    <div class="bg-gradient-to-r from-blue-600 to-blue-700 rounded-xl p-6 text-white">
-      <div class="flex items-center justify-between">
-        <div>
-          <h3 class="text-lg font-semibold">Renova Parse CRM</h3>
-          <p class="text-blue-100 mt-1">
-            Unified platform for parsing Zillow real estate data and Seattle building permits.
-          </p>
-        </div>
-        <a 
-          href="http://localhost:8000/docs" 
-          target="_blank"
-          class="px-4 py-2 bg-white text-blue-600 rounded-lg font-medium hover:bg-blue-50 transition-colors"
-        >
-          API Documentation
-        </a>
+    <div class="bg-gray-900 rounded-xl p-6 text-white">
+      <div>
+        <h3 class="text-lg font-semibold">Renova Parse CRM</h3>
+        <p class="text-blue-100 mt-1">
+          Unified platform for parsing Zillow real estate data, Seattle building permits, and MyBuildingPermit.
+        </p>
       </div>
     </div>
   </div>
@@ -226,14 +234,26 @@ async function loadStats() {
   }
 }
 
+function numberOrZero(val) {
+  const n = Number(val)
+  return Number.isFinite(n) ? n : 0
+}
+
 function formatPrice(value) {
-  if (!value) return '$0'
+  const n = Number(value)
+  if (!Number.isFinite(n) || n === 0) return '—'
   return new Intl.NumberFormat('en-US', { 
     style: 'currency', 
     currency: 'USD',
     minimumFractionDigits: 0,
     maximumFractionDigits: 0
-  }).format(value)
+  }).format(n)
+}
+
+function jobLabel(type) {
+  if (type === 'zillow') return 'Zillow Parse'
+  if (type === 'mbp') return 'MyBuildingPermit'
+  return 'Permit Parse'
 }
 
 function formatDate(dateStr) {
@@ -249,10 +269,10 @@ function formatDate(dateStr) {
 function getStatusClass(status) {
   const classes = {
     completed: 'bg-green-100 text-green-700',
-    running: 'bg-blue-100 text-blue-700',
+    running: 'bg-gray-100 text-blue-700',
     pending: 'bg-gray-100 text-gray-700',
     failed: 'bg-red-100 text-red-700',
-    parsing: 'bg-blue-100 text-blue-700',
+    parsing: 'bg-gray-100 text-gray-700',
     verifying: 'bg-amber-100 text-amber-700',
   }
   return classes[status] || 'bg-gray-100 text-gray-700'

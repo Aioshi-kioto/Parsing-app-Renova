@@ -3,12 +3,14 @@ Permits API Router
 Endpoints для парсинга и получения данных Seattle Building Permits
 """
 from fastapi import APIRouter, HTTPException, Query
-from fastapi.responses import StreamingResponse
+from fastapi.responses import StreamingResponse, Response
 from typing import List, Optional
 import csv
 import io
 import json
 from datetime import datetime
+
+from utils.excel_export import create_formatted_excel
 
 import sys
 from pathlib import Path
@@ -26,30 +28,74 @@ router = APIRouter()
 @router.post("/parse", response_model=dict)
 async def start_parse(request: PermitParseRequest):
     """Запуск парсинга пермитов"""
-    job_id = create_permit_job(
-        year=request.year,
-        permit_class=request.permit_class,
-        min_cost=request.min_cost
-    )
+    print(f"\n[PERMITS API] ===== Starting permit parse request =====")
+    print(f"[PERMITS API] Year: {request.year}, Month: {request.month}")
+    print(f"[PERMITS API] Permit Class: {request.permit_class}")
+    print(f"[PERMITS API] Min Cost: {request.min_cost}")
+    print(f"[PERMITS API] Verify Owner-Builder: {request.verify_owner_builder}, Headless: {request.headless} (browser visible when False)")
     
-    from services.permit_parser import start_permit_parse_job
-    start_permit_parse_job(
-        job_id=job_id,
-        year=request.year,
-        month=request.month,
-        period=request.period,
-        permit_class=request.permit_class,
-        min_cost=request.min_cost,
-        verify=request.verify_owner_builder
-    )
-    
-    return {
-        "job_id": job_id,
-        "status": "started",
-        "year": request.year,
-        "period": request.period or (f"month-{request.month}" if request.month else "year"),
-        "permit_class": request.permit_class
-    }
+    try:
+        import logging
+        logger = logging.getLogger(__name__)
+        
+        logger.info(f"Starting permit parse: year={request.year}, month={request.month}, "
+                   f"permit_class={request.permit_class}, min_cost={request.min_cost}, "
+                   f"verify={request.verify_owner_builder}")
+        print(f"[PERMITS API] Logger initialized")
+        
+        # Нормализуем permit_class (пустая строка -> None)
+        permit_class = request.permit_class if request.permit_class and request.permit_class.strip() else None
+        print(f"[PERMITS API] Normalized permit_class: {permit_class}")
+        
+        print(f"[PERMITS API] Creating permit job...")
+        job_id = create_permit_job(
+            year=request.year,
+            permit_class=permit_class,
+            min_cost=request.min_cost
+        )
+        print(f"[PERMITS API] OK Created permit job {job_id}")
+        logger.info(f"Created permit job {job_id}")
+        
+        print(f"[PERMITS API] Importing start_permit_parse_job...")
+        from services.permit_parser import start_permit_parse_job
+        print(f"[PERMITS API] Starting permit parse job in background...")
+        start_permit_parse_job(
+            job_id=job_id,
+            year=request.year,
+            month=request.month,
+            permit_class=permit_class,
+            min_cost=request.min_cost,
+            verify=request.verify_owner_builder,
+            headless=request.headless
+        )
+        print(f"[PERMITS API] OK Started permit parse job {job_id} in background thread")
+        logger.info(f"Started permit parse job {job_id}")
+        
+        result = {
+            "job_id": job_id,
+            "status": "started",
+            "year": request.year,
+            "month": request.month,
+            "permit_class": permit_class
+        }
+        print(f"[PERMITS API] ===== Request completed successfully =====\n")
+        return result
+        
+    except Exception as e:
+        import traceback
+        import logging
+        logger = logging.getLogger(__name__)
+        error_msg = f"Error starting permit parse: {str(e)}"
+        error_traceback = traceback.format_exc()
+        
+        print(f"\n[PERMITS API] ERROR")
+        print(f"[PERMITS API] {error_msg}")
+        print(f"[PERMITS API] Traceback:\n{error_traceback}")
+        print(f"[PERMITS API] ============================================\n")
+        
+        logger.error(error_msg)
+        logger.error(error_traceback)
+        raise HTTPException(status_code=500, detail=error_msg)
 
 
 @router.get("/status/{job_id}", response_model=PermitJobStatus)
@@ -77,7 +123,7 @@ async def get_jobs(limit: int = 100):
     cursor = conn.cursor()
     
     cursor.execute("""
-        SELECT id, status, year, permits_found, owner_builders_found, error_message, started_at, completed_at
+        SELECT id, status, year, permits_found, permits_verified, owner_builders_found, error_message, started_at, completed_at
         FROM permit_jobs
         ORDER BY started_at DESC
         LIMIT ?
@@ -197,12 +243,21 @@ async def get_stats(
     
     where = " AND ".join(conditions) if conditions else "1=1"
     
+    # Счётчики — по ВСЕМ пермитам (не только с cost)
     cursor.execute(f"""
         SELECT 
             COUNT(*) as total,
             SUM(CASE WHEN is_owner_builder = 1 THEN 1 ELSE 0 END) as owner_builders,
             SUM(CASE WHEN is_owner_builder = 0 THEN 1 ELSE 0 END) as contractors,
-            SUM(CASE WHEN is_owner_builder IS NULL THEN 1 ELSE 0 END) as unknown,
+            SUM(CASE WHEN is_owner_builder IS NULL THEN 1 ELSE 0 END) as unknown
+        FROM permits
+        WHERE {where}
+    """, params)
+    row_counts = cursor.fetchone()
+    
+    # Стоимость — только по пермитам с est_project_cost
+    cursor.execute(f"""
+        SELECT 
             AVG(est_project_cost) as avg_cost,
             MIN(est_project_cost) as min_cost,
             MAX(est_project_cost) as max_cost,
@@ -210,18 +265,18 @@ async def get_stats(
         FROM permits
         WHERE {where} AND est_project_cost IS NOT NULL
     """, params)
-    row = cursor.fetchone()
+    row_cost = cursor.fetchone()
     conn.close()
     
     return PermitStats(
-        total=row[0] or 0,
-        owner_builders=row[1] or 0,
-        contractors=row[2] or 0,
-        unknown=row[3] or 0,
-        avg_cost=round(row[4], 2) if row[4] else 0,
-        min_cost=row[5],
-        max_cost=row[6],
-        total_cost=round(row[7], 2) if row[7] else 0,
+        total=row_counts[0] or 0,
+        owner_builders=row_counts[1] or 0,
+        contractors=row_counts[2] or 0,
+        unknown=row_counts[3] or 0,
+        avg_cost=round(row_cost[0], 2) if row_cost[0] else 0,
+        min_cost=row_cost[1],
+        max_cost=row_cost[2],
+        total_cost=round(row_cost[3], 2) if row_cost[3] else 0,
     )
 
 
@@ -256,8 +311,9 @@ async def export_job(
     owner_filter = "AND is_owner_builder = 1" if only_owners else ""
     
     cursor.execute(f"""
-        SELECT permit_num, permit_class, permit_type_mapped, description,
-               est_project_cost, applied_date, address, city, state, zipcode,
+        SELECT permit_num, permit_class, permit_type_mapped, permit_type_desc, description,
+               est_project_cost, applied_date, issued_date, status_current,
+               address, city, state, zipcode,
                contractor_name, is_owner_builder, verification_status, 
                work_performer_text, portal_link, created_at
         FROM permits
@@ -270,9 +326,12 @@ async def export_job(
     if not permits:
         raise HTTPException(status_code=404, detail="Пермиты не найдены")
     
-    # Конвертируем is_owner_builder
+    # Конвертируем is_owner_builder и используем work_performer_text для отображения
     for p in permits:
-        if p.get('is_owner_builder') is not None:
+        # В Excel показываем work_performer_text вместо Yes/No/Unknown
+        if p.get('work_performer_text'):
+            p['is_owner_builder'] = p['work_performer_text']
+        elif p.get('is_owner_builder') is not None:
             p['is_owner_builder'] = 'Yes' if p['is_owner_builder'] else 'No'
         else:
             p['is_owner_builder'] = 'Unknown'
@@ -296,12 +355,16 @@ async def export_job(
 
 @router.get("/export")
 async def export_all(
-    format: str = Query(default="csv", enum=["csv", "json"]),
+    format: str = Query(default="csv", enum=["csv", "json", "xlsx"]),
     is_owner_builder: Optional[bool] = None,
     min_cost: Optional[float] = None,
-    year: Optional[int] = None
+    max_cost: Optional[float] = None,
+    city: Optional[str] = None,
+    permit_class: Optional[str] = None,
+    search: Optional[str] = None,
+    year: Optional[int] = None,
 ):
-    """Экспорт всех пермитов с фильтрами"""
+    """Экспорт всех пермитов с фильтрами (CSV, JSON, Excel)"""
     conn = get_connection()
     conn.row_factory = dict_factory
     cursor = conn.cursor()
@@ -315,6 +378,18 @@ async def export_all(
     if min_cost is not None:
         conditions.append("est_project_cost >= ?")
         params.append(min_cost)
+    if max_cost is not None:
+        conditions.append("est_project_cost <= ?")
+        params.append(max_cost)
+    if city:
+        conditions.append("LOWER(city) LIKE ?")
+        params.append(f"%{city.lower()}%")
+    if permit_class:
+        conditions.append("LOWER(permit_class) LIKE ?")
+        params.append(f"%{permit_class.lower()}%")
+    if search:
+        conditions.append("(permit_num LIKE ? OR address LIKE ? OR description LIKE ?)")
+        params.extend([f"%{search}%", f"%{search}%", f"%{search}%"])
     if year:
         conditions.append("strftime('%Y', applied_date) = ?")
         params.append(str(year))
@@ -322,8 +397,9 @@ async def export_all(
     where = " AND ".join(conditions) if conditions else "1=1"
     
     cursor.execute(f"""
-        SELECT permit_num, permit_class, permit_type_mapped, description,
-               est_project_cost, applied_date, address, city, state, zipcode,
+        SELECT permit_num, permit_class, permit_type_mapped, permit_type_desc, description,
+               est_project_cost, applied_date, issued_date, status_current,
+               address, city, state, zipcode,
                contractor_name, is_owner_builder, verification_status, 
                work_performer_text, portal_link, created_at
         FROM permits
@@ -336,9 +412,12 @@ async def export_all(
     if not permits:
         raise HTTPException(status_code=404, detail="Пермиты не найдены")
     
-    # Конвертируем is_owner_builder
+    # Конвертируем is_owner_builder - показываем work_performer_text если есть
     for p in permits:
-        if p.get('is_owner_builder') is not None:
+        # В Excel показываем work_performer_text вместо Yes/No/Unknown
+        if p.get('work_performer_text'):
+            p['is_owner_builder'] = p['work_performer_text']
+        elif p.get('is_owner_builder') is not None:
             p['is_owner_builder'] = 'Yes' if p['is_owner_builder'] else 'No'
         else:
             p['is_owner_builder'] = 'Unknown'
@@ -356,5 +435,68 @@ async def export_all(
             media_type="text/csv",
             headers={"Content-Disposition": f"attachment; filename=permits_export_{timestamp}.csv"}
         )
+    elif format == "xlsx":
+        excel_bytes = create_formatted_excel(
+            permits,
+            sheet_name="Building Permits",
+            currency_columns=["est_project_cost"],
+            header_bg="7C3AED",
+        )
+        return Response(
+            content=excel_bytes,
+            media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+            headers={"Content-Disposition": f"attachment; filename=permits_export_{timestamp}.xlsx"}
+        )
     else:
         return {"permits": permits, "total": len(permits)}
+
+
+@router.post("/jobs/{job_id}/cancel")
+async def cancel_permit_job(job_id: int):
+    """Остановить задачу парсинга пермитов"""
+    conn = get_connection()
+    conn.row_factory = dict_factory
+    cursor = conn.cursor()
+    
+    cursor.execute("SELECT id, status FROM permit_jobs WHERE id = ?", (job_id,))
+    job = cursor.fetchone()
+    
+    if not job:
+        conn.close()
+        raise HTTPException(status_code=404, detail="Job not found")
+    
+    if job["status"] not in ("running", "pending", "fetching", "processing", "verifying"):
+        conn.close()
+        raise HTTPException(status_code=400, detail=f"Cannot cancel job with status '{job['status']}'")
+    
+    cursor.execute("""
+        UPDATE permit_jobs SET status = 'cancelled', completed_at = ?
+        WHERE id = ?
+    """, (datetime.now().isoformat(), job_id))
+    conn.commit()
+    conn.close()
+    
+    return {"status": "cancelled", "job_id": job_id}
+
+
+@router.delete("/jobs/{job_id}")
+async def delete_permit_job(job_id: int):
+    """Удалить задачу и связанные пермиты"""
+    conn = get_connection()
+    conn.row_factory = dict_factory
+    cursor = conn.cursor()
+    
+    cursor.execute("SELECT id FROM permit_jobs WHERE id = ?", (job_id,))
+    job = cursor.fetchone()
+    
+    if not job:
+        conn.close()
+        raise HTTPException(status_code=404, detail="Job not found")
+    
+    cursor.execute("DELETE FROM permits WHERE job_id = ?", (job_id,))
+    permits_deleted = cursor.rowcount
+    cursor.execute("DELETE FROM permit_jobs WHERE id = ?", (job_id,))
+    conn.commit()
+    conn.close()
+    
+    return {"status": "deleted", "job_id": job_id, "permits_deleted": permits_deleted}

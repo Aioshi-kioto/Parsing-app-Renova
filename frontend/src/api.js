@@ -1,9 +1,8 @@
 /**
  * Renova Parse CRM - API Client
- * Port from VITE_API_PORT (set by start.py) or default 8000
+ * Uses Vite proxy for API calls (configured in vite.config.js)
  */
-const API_PORT = import.meta.env.VITE_API_PORT || '8000'
-const API_BASE = `http://localhost:${API_PORT}/api`
+const API_BASE = '/api'
 
 // ================================
 // ОБЩИЕ ФУНКЦИИ
@@ -11,20 +10,29 @@ const API_BASE = `http://localhost:${API_PORT}/api`
 
 async function fetchApi(endpoint, options = {}) {
   const url = `${API_BASE}${endpoint}`
-  const response = await fetch(url, {
-    headers: {
-      'Content-Type': 'application/json',
-      ...options.headers
-    },
-    ...options
-  })
-  
-  if (!response.ok) {
-    const error = await response.json().catch(() => ({ detail: 'Unknown error' }))
-    throw new Error(error.detail || `HTTP ${response.status}`)
+
+  try {
+    const response = await fetch(url, {
+      headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+      },
+      ...options
+    })
+
+    if (!response.ok) {
+      const error = await response.json().catch(() => ({ detail: `HTTP ${response.status}: ${response.statusText}` }))
+      throw new Error(error.detail || `HTTP ${response.status}`)
+    }
+
+    return response.json()
+  } catch (error) {
+    // Enhanced error handling for network issues
+    if (error instanceof TypeError && error.message.includes('fetch')) {
+      throw new Error(`Network error: Unable to connect to API. Please ensure the backend is running on the correct port.`)
+    }
+    throw error
   }
-  
-  return response.json()
 }
 
 // ================================
@@ -104,10 +112,10 @@ export async function getMapCombined(limit = 500) {
 // ZILLOW API
 // ================================
 
-export async function startZillowParse(urls) {
+export async function startZillowParse(urls, headless = false) {
   return fetchApi('/zillow/parse', {
     method: 'POST',
-    body: JSON.stringify({ urls })
+    body: JSON.stringify({ urls, headless })
   })
 }
 
@@ -204,6 +212,104 @@ export function getPermitExportUrl(jobId, format = 'csv', onlyOwners = false) {
 export function getPermitExportAllUrl(params = {}) {
   const searchParams = new URLSearchParams({ format: 'csv', ...params })
   return `${API_BASE}/permits/export?${searchParams}`
+}
+
+// ================================
+// MYBUILDINGPERMIT API
+// ================================
+
+export async function getMBPJurisdictions() {
+  return fetchApi('/mybuildingpermit/jurisdictions')
+}
+
+export async function startMBPParse(config) {
+  return fetchApi('/mybuildingpermit/parse', {
+    method: 'POST',
+    body: JSON.stringify(config)
+  })
+}
+
+export async function getMBPStatus(jobId) {
+  return fetchApi(`/mybuildingpermit/status/${jobId}`)
+}
+
+export async function getMBPJobs(limit = 100) {
+  return fetchApi(`/mybuildingpermit/jobs?limit=${limit}`)
+}
+
+export async function getMBPPermits(params = {}) {
+  const searchParams = new URLSearchParams()
+  Object.entries(params).forEach(([key, value]) => {
+    if (value !== null && value !== undefined && value !== '') {
+      searchParams.append(key, value)
+    }
+  })
+  return fetchApi(`/mybuildingpermit/list?${searchParams}`)
+}
+
+export async function getMBPStats(jobId = null) {
+  const params = jobId ? `?job_id=${jobId}` : ''
+  return fetchApi(`/mybuildingpermit/stats${params}`)
+}
+
+export async function getMBPOwnerBuilders(params = {}) {
+  const searchParams = new URLSearchParams()
+  Object.entries(params).forEach(([key, value]) => {
+    if (value !== null && value !== undefined && value !== '') {
+      searchParams.append(key, value)
+    }
+  })
+  return fetchApi(`/mybuildingpermit/owner-builders?${searchParams}`)
+}
+
+export function getMBPExportUrl(jobId = null, format = 'csv', onlyOwners = false) {
+  const params = new URLSearchParams({ format, only_owners: onlyOwners })
+  if (jobId) params.append('job_id', jobId)
+  return `${API_BASE}/mybuildingpermit/export?${params}`
+}
+
+export async function cancelMBPJob(jobId) {
+  return fetchApi(`/mybuildingpermit/jobs/${jobId}/cancel`, {
+    method: 'POST'
+  })
+}
+
+export async function deleteMBPJob(jobId) {
+  return fetchApi(`/mybuildingpermit/jobs/${jobId}`, {
+    method: 'DELETE'
+  })
+}
+
+// ================================
+// PERMITS CANCEL / DELETE
+// ================================
+
+export async function cancelPermitJob(jobId) {
+  return fetchApi(`/permits/jobs/${jobId}/cancel`, {
+    method: 'POST'
+  })
+}
+
+export async function deletePermitJob(jobId) {
+  return fetchApi(`/permits/jobs/${jobId}`, {
+    method: 'DELETE'
+  })
+}
+
+// ================================
+// ZILLOW CANCEL / DELETE
+// ================================
+
+export async function cancelZillowJob(jobId) {
+  return fetchApi(`/zillow/jobs/${jobId}/cancel`, {
+    method: 'POST'
+  })
+}
+
+export async function deleteZillowJob(jobId) {
+  return fetchApi(`/zillow/jobs/${jobId}`, {
+    method: 'DELETE'
+  })
 }
 
 // ================================

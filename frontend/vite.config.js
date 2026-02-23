@@ -1,7 +1,9 @@
 import { defineConfig } from 'vite'
 import vue from '@vitejs/plugin-vue'
 
-const apiPort = process.env.VITE_API_PORT || '8000'
+// Get API port from environment (set by start.py) or default to 8000
+// In dev mode, Vite reads from process.env, but we need to handle it properly
+const apiPort = process.env.VITE_API_PORT || import.meta.env.VITE_API_PORT || '8000'
 
 export default defineConfig({
   plugins: [vue()],
@@ -10,6 +12,7 @@ export default defineConfig({
       '/api': {
         target: `http://localhost:${apiPort}`,
         changeOrigin: true,
+        rewrite: (path) => path, // Don't rewrite, keep /api prefix
       }
     }
   }

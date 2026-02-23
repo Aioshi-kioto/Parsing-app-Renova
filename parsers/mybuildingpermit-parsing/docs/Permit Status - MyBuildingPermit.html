@@ -1,0 +1,944 @@
+<!DOCTYPE html>
+<!-- saved from url=(0042)https://permitsearch.mybuildingpermit.com/ -->
+<html lang="en" style="" class="js flexbox flexboxlegacy canvas canvastext webgl no-touch geolocation postmessage no-websqldatabase indexeddb hashchange history draganddrop websockets rgba hsla multiplebgs backgroundsize borderimage borderradius boxshadow textshadow opacity cssanimations csscolumns cssgradients cssreflections csstransforms csstransforms3d csstransitions fontface generatedcontent video audio localstorage sessionstorage webworkers no-applicationcache svg inlinesvg smil svgclippaths k-webkit k-webkit144"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    <!-- Google tag (gtag.js) -->
+    <script src="chrome-extension://jcacnejopjdphbnjgfaaobbfafkihpep/hive_keychain.js"></script><script async="" src="./Permit Status - MyBuildingPermit_files/js"></script>
+    <script>
+        window.dataLayer = window.dataLayer || [];
+        function gtag() { dataLayer.push(arguments); }
+        gtag('js', new Date());
+
+        gtag('config', 'G-9JY1PKGQ6S');
+    </script>
+
+    
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Permit Status - MyBuildingPermit</title>
+    <script src="./Permit Status - MyBuildingPermit_files/modernizr"></script>
+
+    <script src="./Permit Status - MyBuildingPermit_files/jquery"></script>
+
+    
+    <script src="./Permit Status - MyBuildingPermit_files/bootstrap"></script>
+
+    <script src="./Permit Status - MyBuildingPermit_files/kendo"></script>
+
+    <link href="./Permit Status - MyBuildingPermit_files/css" rel="stylesheet">
+
+    <link href="./Permit Status - MyBuildingPermit_files/css(1)" rel="stylesheet">
+
+
+    <!--To stop cross frame scripting attacks -->
+    <script type="text/javascript">
+        if (top.frames.length !== 0)
+            top.location = self.document.location;
+    </script>
+</head>
+<body>
+	<header class="navbar navbar-inverse navbar-fixed-top">
+		<div class="container-fluid">
+			<div class="navbar-header">
+				<button type="button" class="navbar-toggle" data-toggle="collapse" data-target=".navbar-collapse">
+                    <span class="sr-only">Menu</span>
+					<span class="icon-bar"></span>
+					<span class="icon-bar"></span>
+					<span class="icon-bar"></span>
+				</button>
+				<a href="https://www.mybuildingpermit.com/" class="navbar-brand keychainify-checked">
+					<img src="./Permit Status - MyBuildingPermit_files/MBPLogo.png" alt="MyBuildingPermit Logo" class="logo">
+				</a>
+			</div>
+			<nav class="navbar-collapse collapse">
+				<ul class="nav navbar-nav">
+					<li><a href="https://epermit.mybuildingpermit.com/" target="_blank" class="keychainify-checked">Apply for Permit</a></li>
+					<li><a href="https://inspection.mybuildingpermit.com/" target="_blank" class="keychainify-checked">Schedule Inspection</a></li>
+					<li><a href="https://customer.mybuildingpermit.com/" target="_blank" class="keychainify-checked">Dashboard</a></li>
+					<li><a href="http://www.mybuildingpermit.com/pages/help.aspx" target="_blank" class="keychainify-checked">Help</a></li>
+				</ul>				
+			</nav>
+		</div>
+	</header>
+
+
+    <section class="main">
+        <div class="container body-content">
+            <div class="row">
+                <div class="col-md-12">
+                    
+
+
+<div class="alert alert-info h4">
+    <em>Welcome to the new MyBuildingPermit Status Site! We hope you find the additional features and functionality helpful. If you need assistance accessing information,
+        please refer to the updated Status Site <a href="https://mybuildingpermit.com/sites/default/files/documentation/MBP_Status%20Site%20User%20Guide_Final_2.pdf" target="_blank" title="User Help Guide" class="keychainify-checked"><strong>Help Guide</strong></a></em>
+</div>
+<h1 class="h2">Permit/Application Status Search</h1>
+<div class="well well-sm hide">
+    <strong>Search instructions or hints go here.</strong>
+</div>
+
+<form id="permitSearchForm" class="form-horizontal" novalidate="novalidate" data-gtm-form-interact-id="0">
+
+    <div class="form-group required">
+        <label for="ddlJurisdictions" class="control-label col-md-2 col-sm-2 col-xs-12" id="ddlJurisdictions_label">Jurisdiction:</label>
+        <div class="col-md-6 col-sm-6 col-xs-12">
+            <span title="" class="k-widget k-dropdown k-header form-control" unselectable="on" role="listbox" aria-haspopup="true" aria-expanded="false" tabindex="0" aria-owns="ddlJurisdictions_listbox" aria-labelledby="ddlJurisdictions_label" aria-disabled="false" aria-busy="false" style="" aria-activedescendant="c840313a-4f02-413d-822b-ecb275c2c745"><span unselectable="on" class="k-dropdown-wrap k-state-default"><span unselectable="on" class="k-input">Auburn</span><span unselectable="on" class="k-select" aria-label="select"><span class="k-icon k-i-arrow-60-down"></span></span></span><select class="form-control" data-val="true" data-val-number="The field JurisId must be a number." data-val-required="The JurisId field is required." id="ddlJurisdictions" name="JurisId" data-role="dropdownlist" style="display: none;" aria-invalid="false"><option value="" selected="selected">--Select One--</option><option value="24">Auburn</option><option value="1">Bellevue</option><option value="2">Bothell</option><option value="11">Burien</option><option value="23">Edmonds</option><option value="25">Federal Way</option><option value="3">Issaquah</option><option value="4">Kenmore</option><option value="20">King County</option><option value="5">Kirkland</option><option value="6">Mercer Island</option><option value="13">Mill Creek</option><option value="19">Newcastle</option><option value="7">Sammamish</option><option value="9">Snoqualmie</option></select></span>
+        </div>
+        <div class="col-md-4 col-sm-4 col-xs-12">
+            <p class="text-right form-control-static"><span class="text-danger text-nowrap"> <span class="glyphicon glyphicon-asterisk small "></span> - Indicates a required field</span></p>
+        </div>
+    </div>
+    <div class="form-group">
+        <label class="col-md-2 col-sm-2 col-xs-12 control-label" for="radioSearchType">Search by:</label>
+        <div class="col-md-10 col-sm-10 col-xs-12">
+            <div class="btn-group btn-group-justified nav-tabs" data-toggle="buttons">
+                <label class="radio-inline btn btn-primary active" for="radioPermitNum">
+                    <input checked="" id="radioPermitNum" name="SearchBy" onchange="search(&#39;permitnumber&#39;)" type="radio" value="PermitNumber"> Permit #
+                </label>
+
+                <label class="radio-inline btn btn-primary" for="radioProjectInfo">
+                    <input id="radioProjectInfo" name="SearchBy" onchange="search(&#39;projectinfo&#39;)" type="radio" value="ProjectInfo">Project Info
+                </label>
+
+                <label class="radio-inline btn btn-primary" for="radioLocation">
+                    <input id="radioLocation" name="SearchBy" onchange="search(&#39;location&#39;)" type="radio" value="Location"> Location
+                </label>
+
+                <label class="radio-inline btn btn-primary" for="radioPeople">
+                    <input id="radioPeople" name="SearchBy" onchange="search(&#39;people&#39;)" type="radio" value="People">People
+                </label>
+            </div>
+
+            <div class="tab-content row-spacer">
+                <div id="divJurisMessage" class="hidden alert alert-info"></div>
+                <div id="divPermitSearch" class="collapse" style="display: block;">
+                    <div class="form-group required">
+                        <label class="col-md-4 col-sm-6 control-label" for="txtPermitNumber">Permit Number (partial match):</label>
+                        <div class="col-md-8 col-sm-6">
+                            <input class="form-control no-group" id="txtPermitNumber" name="PermitNumber" placeholder="Enter the permit number" type="text" value="" data-gtm-form-interact-field-id="0" aria-invalid="false">
+                        </div>
+                    </div>
+                </div>
+                <div id="divProjectInfoSearch" class="collapse">
+                    <div class="form-group">
+                        <label class="col-md-4 col-sm-6 control-label" for="txtProjectName">Project Name/Description (partial match):</label>
+                        <div class="col-md-8 col-sm-6">
+                            <input class="form-control projectInfo-group" id="txtProjectName" name="ProjectName" placeholder="Enter the name of the project" type="text" value="">
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label class=" col-md-4 col-sm-6 control-label" for="ddlPermitTypes" id="lblPermitTypes">Permit Type: <span class="glyphicon glyphicon-question-sign helpLink" id="permitTypeHelpImg" onclick="ShowHelpWindow(1);return false;" style="display: inline-block;"></span></label>
+                        <div class="col-md-8 col-sm-6">
+                            <div class="k-widget k-multiselect k-header form-control projectInfo-group k-multiselect-clearable" deselectable="on" title="" style=""><div class="k-multiselect-wrap k-floatwrap" deselectable="on"><ul role="listbox" deselectable="on" class="k-reset" id="ddlPermitTypes_taglist"></ul><input class="k-input k-readonly" style="width: 130px;" accesskey="" autocomplete="off" role="listbox" title="" aria-expanded="false" tabindex="0" aria-owns="ddlPermitTypes_taglist ddlPermitTypes_listbox" aria-labelledby="lblPermitTypes" aria-disabled="false" aria-busy="false" aria-activedescendant="e0c100f3-0319-4e4f-aa60-cb8efd73fb5a"><span unselectable="on" class="k-icon k-clear-value k-i-close k-hidden" title="clear" role="button" tabindex="-1"></span><span class="k-icon k-i-loading k-hidden"></span><span style="font-family: &quot;Open Sans&quot;, &quot;Helvetica Neue&quot;, Helvetica, Arial, sans-serif; font-size: 14px; font-stretch: 100%; font-style: normal; font-weight: 400; letter-spacing: normal; text-transform: none; line-height: 27.1px; position: absolute; visibility: hidden; top: -3333px; left: -3333px;">-- Select Types --</span></div><select class="form-control projectInfo-group" id="ddlPermitTypes" name="SelectedPermitTypes" data-role="multiselect" multiple="multiple" aria-disabled="false" style="display: none;"><option value="Addition">Addition</option><option value="Adult Family Home">Adult Family Home</option><option value="Alterations">Alterations</option><option value="ackflow Premise">ackflow Premise</option><option value="Building">Building</option><option value="Construction">Construction</option><option value="Demolition">Demolition</option><option value="Fire">Fire</option><option value="Flood Plain">Flood Plain</option><option value="Grading">Grading</option><option value="Hydrant">Hydrant</option><option value="Mechanical">Mechanical</option><option value="Plumbing">Plumbing</option><option value="Sewer">Sewer</option><option value="Signs">Signs</option><option value="Stock">Stock</option><option value="Storm">Storm</option><option value="Tenant Improvement">Tenant Improvement</option><option value="Water">Water</option><option value="Administrative Use Permit">Administrative Use Permit</option><option value="Boundary Line Adjustment">Boundary Line Adjustment</option><option value="Comprehensive Plan Amendment">Comprehensive Plan Amendment</option><option value="Conditional Use">Conditional Use</option><option value="Critical Areas">Critical Areas</option><option value="Deviation">Deviation</option><option value="Environmental Mitigation">Environmental Mitigation</option><option value="Public Facilities Extension">Public Facilities Extension</option><option value="Landscape Plan Revision">Landscape Plan Revision</option><option value="Miscellaneous">Miscellaneous</option><option value="Plat">Plat</option><option value="Preapplication Meeting">Preapplication Meeting</option><option value="Rezone">Rezone</option><option value="SEPA Determination">SEPA Determination</option><option value="Shorelines">Shorelines</option><option value="Short Plat">Short Plat</option><option value="Street Delay Request">Street Delay Request</option><option value="Temporary Use">Temporary Use</option><option value="Utility Delay Request">Utility Delay Request</option><option value="Variance">Variance</option><option value="Right-of-Way Vacation">Right-of-Way Vacation</option><option value="Zoning Certification Letter">Zoning Certification Letter</option><option value="Zoning Code Text Amendment">Zoning Code Text Amendment</option><option value="Payback">Payback</option><option value="Major Project">Major Project</option></select></div>
+
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label class="col-md-4 col-sm-6 control-label" for="ddlPermitStatuses" id="lblPermitStatuses">Permit Status: <span class="glyphicon glyphicon-question-sign helpLink" id="permitStatusHelpImg" onclick="ShowHelpWindow(2);return false;" style="display: inline-block;"></span></label>
+                        <div class="col-md-8 col-sm-6">
+                            <div class="k-widget k-multiselect k-header form-control projectInfo-group k-multiselect-clearable" deselectable="on" title="" style=""><div class="k-multiselect-wrap k-floatwrap" deselectable="on"><ul role="listbox" deselectable="on" class="k-reset" id="ddlPermitStatuses_taglist"></ul><input class="k-input k-readonly" style="width: 148px;" accesskey="" autocomplete="off" role="listbox" title="" aria-expanded="false" tabindex="0" aria-owns="ddlPermitStatuses_taglist ddlPermitStatuses_listbox" aria-labelledby="lblPermitStatuses" aria-disabled="false" aria-busy="false" aria-activedescendant="eeb793ef-7ac4-456a-b0d8-a74961d6df3f"><span unselectable="on" class="k-icon k-clear-value k-i-close k-hidden" title="clear" role="button" tabindex="-1"></span><span class="k-icon k-i-loading k-hidden"></span><span style="font-family: &quot;Open Sans&quot;, &quot;Helvetica Neue&quot;, Helvetica, Arial, sans-serif; font-size: 14px; font-stretch: 100%; font-style: normal; font-weight: 400; letter-spacing: normal; text-transform: none; line-height: 27.1px; position: absolute; visibility: hidden; top: -3333px; left: -3333px;">-- Select Statuses --</span></div><select class="form-control projectInfo-group" id="ddlPermitStatuses" name="SelectedPermitStatuses" data-role="multiselect" multiple="multiple" aria-disabled="false" style="display: none;"><option value="APPLIED">APPLIED</option><option value="APPROVED">APPROVED</option><option value="EXPIRED">EXPIRED</option><option value="FINALED">FINALED</option><option value="HOLD">HOLD</option><option value="IN REVIEW">IN REVIEW</option><option value="ISSUED">ISSUED</option><option value="RETURNED TO APPLICANT">RETURNED TO APPLICANT</option><option value="REVIEW COMPLETE">REVIEW COMPLETE</option><option value="VOID">VOID</option><option value="WITHDRAWN">WITHDRAWN</option></select></div>
+                        </div>
+                    </div>
+
+                </div>
+                <div id="divLocationSearch" class="collapse">
+                    <div class="form-group">
+                        <label class="col-md-4 col-sm-6 control-label" for="txtAddressNumber">Number (partial match):</label>
+                        <div class="col-md-8 col-sm-6">
+                            <input class="form-control location-group" id="txtAddressNumber" name="HouseBldgNum" placeholder="Enter the house or building number" type="text" value="">
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label class="col-md-4 col-sm-6 control-label" for="txtStreetName">Street Name (partial match):</label>
+                        <div class="col-md-8 col-sm-6">
+                            <input class="form-control location-group" id="txtStreetName" name="StreetName" placeholder="Enter the street name" type="text" value="">
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label class="col-md-4 col-sm-6 control-label" for="txtParcelNumber">Parcel (partial match):</label>
+                        <div class="col-md-8 col-sm-6">
+                            <input class="form-control location-group" id="txtParcelNumber" name="ParcelNum" placeholder="Enter the parcel number" type="text" value="">
+                        </div>
+                    </div>
+                </div>
+                <div id="divPeopleSearch" class="collapse">
+                    <div class="form-group">
+                        <label class="col-md-4 col-sm-6 control-label" for="txtCompanyName">Contractor Company (partial match):</label>
+                        <div class="col-md-8 col-sm-6">
+                            <input class="form-control people-group" id="txtCompanyName" name="ContractorCompany" placeholder="Enter company name" type="text" value="">
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label class="col-md-4 col-sm-6 control-label" for="txtContractorLicNum">Contractor License (partial match):</label>
+                        <div class="col-md-8 col-sm-6">
+                            <input class="form-control people-group" id="txtContractorLicNum" name="ContractorLicNum" placeholder="Enter contractor lic no" type="text" value="">
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label class="col-md-4 col-sm-6 control-label" for="txtApplicantLastName">Applicant Last Name (partial match):</label>
+                        <div class="col-md-8 col-sm-6">
+                            <input class="form-control people-group" id="txtApplicantLastName" name="ApplicantLastName" placeholder="Enter last name" type="text" value="">
+                        </div>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label class="col-md-4 col-sm-6 control-label" for="ddlDateRanges" id="ddlDateRanges_label">Date Type:</label>
+                    <div class="col-md-4 col-lg-4 col-sm-4">
+                        <div class="k-widget k-multiselect k-header form-control k-multiselect-clearable" deselectable="on" title="" style=""><div class="k-multiselect-wrap k-floatwrap" deselectable="on"><ul role="listbox" deselectable="on" class="k-reset" id="ddlDateRanges_taglist"><li class="k-button" deselectable="on"><span deselectable="on">Applied</span><span unselectable="on" aria-label="delete" class="k-select"><span class="k-icon k-i-close"></span></span></li></ul><input class="k-input" style="width: 25px;" accesskey="" autocomplete="off" role="listbox" title="" aria-expanded="false" tabindex="0" aria-owns="ddlDateRanges_taglist ddlDateRanges_listbox" aria-labelledby="ddlDateRanges_label" aria-disabled="false" aria-busy="false" aria-activedescendant="2df15812-db8f-41ce-8f92-04eeda0ecb41"><span unselectable="on" class="k-icon k-clear-value k-i-close" title="clear" role="button" tabindex="-1"></span><span class="k-icon k-i-loading k-hidden"></span></div><select class="form-control" id="ddlDateRanges" multiple="multiple" name="SelectedDateRanges" data-role="multiselect" aria-disabled="false" style="display: none;" aria-invalid="false"><option value="Applied">Applied</option><option value="Issued">Issued</option><option value="Finaled">Finaled</option></select><span style="font-family: &quot;Open Sans&quot;, &quot;Helvetica Neue&quot;, Helvetica, Arial, sans-serif; font-size: 14px; font-stretch: 100%; font-style: normal; font-weight: 400; letter-spacing: normal; text-transform: none; line-height: 27.1px; position: absolute; visibility: hidden; top: -3333px; left: -3333px;"></span></div>
+                        
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label class="col-md-4 col-sm-6 control-label" for="FromDate">From:</label>
+                    <div class="col-sm-5 col-md-5">
+                        <span class="k-widget k-datepicker k-header form-control" style=""><span class="k-picker-wrap k-state-default"><input class="form-control k-input" data-val="true" data-val-date="The field FromDate must be a date." id="FromDate" name="FromDate" placeholder="Click Calendar" type="text" value="" data-role="datepicker" role="combobox" aria-expanded="false" aria-owns="FromDate_dateview" aria-disabled="false" style="width: 100%;" aria-activedescendant="12d92e94-9a65-4ef0-9f5a-74ccc3a324ee_cell_selected" aria-invalid="false"><span unselectable="on" class="k-select" aria-label="select" role="button" aria-controls="FromDate_dateview"><span class="k-icon k-i-calendar"></span></span></span></span>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label class="col-md-4 col-sm-6 control-label" for="ToDate">To:</label>
+                    <div class="col-sm-5 col-md-5">
+                        <span class="k-widget k-datepicker k-header form-control" style=""><span class="k-picker-wrap k-state-default"><input class="form-control k-input" data-val="true" data-val-date="The field ToDate must be a date." id="ToDate" name="ToDate" placeholder="Click Calendar" type="text" value="" data-role="datepicker" role="combobox" aria-expanded="false" aria-owns="ToDate_dateview" aria-disabled="false" style="width: 100%;" aria-activedescendant="feedf95b-22d7-402f-83da-04a04cac10bf_cell_selected" aria-invalid="false"><span unselectable="on" class="k-select" aria-label="select" role="button" aria-controls="ToDate_dateview"><span class="k-icon k-i-calendar"></span></span></span></span>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <div class="col-xs-12">
+                        <div class="pull-right">
+                            <p class="text-warning visible-md-inline visible-lg-inline">
+                                <span class="glyphicon glyphicon-info-sign"></span>Jurisdiction is a required field
+                            </p>
+                            <button type="submit" class="btn btn-primary btn-sm" id="btnSearch">Search</button>
+                            <button type="button" class="btn btn-default btn-sm" onclick="javascript: clearSearchCriteria();">Cancel</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="row-spacer">
+        <div id="divWaitMessage" class="col-sm-10 col-xs-12 col-sm-offset-2 hidden">
+            <img src="./Permit Status - MyBuildingPermit_files/ajax-loader_Bert2.gif" alt="Processing..." class="center-block img-responsive">
+        </div>
+        <div id="searchError" class="col-sm-10 col-xs-12 col-sm-offset-2  alert alert-danger hidden">
+            <strong>An error was encountered while searching permits. Please try again.</strong>
+        </div>
+        <div id="gridContainer" class="col-sm-10 col-xs-12 col-sm-offset-2">
+            <div id="searchResultsGrid" data-role="grid" class="k-grid k-widget k-display-block"><div class="k-header k-grid-toolbar"><a role="button" class="k-button k-button-icontext k-grid-excel keychainify-checked" href="https://permitsearch.mybuildingpermit.com/#"><span class="k-icon k-i-file-excel"></span>Export to Excel</a></div><div class="k-grid-header" style="padding-right: 19px;"><div class="k-grid-header-wrap k-auto-scrollable"><table role="grid"><colgroup><col class="k-hierarchy-col"><col style="width:15%"><col style="width:25%"><col style="width:25%"><col><col><col><col></colgroup><thead role="rowgroup"><tr role="row"><th class="k-hierarchy-cell k-header" scope="col"></th><th scope="col" role="columnheader" data-field="PermitNumber" aria-haspopup="true" rowspan="1" data-title="Permit #" data-index="0" id="5c1a385f-335a-4f71-a4e1-c1592802541a" class="k-header" data-role="columnsorter"><a class="k-link keychainify-checked" href="https://permitsearch.mybuildingpermit.com/#">Permit #</a></th><th scope="col" role="columnheader" data-field="PermitDescription" aria-haspopup="true" rowspan="1" data-title="Description" data-index="1" id="979b23c1-b33f-45fd-8cb2-f29c8e64825a" class="k-header" data-role="columnsorter"><a class="k-link keychainify-checked" href="https://permitsearch.mybuildingpermit.com/#">Description</a></th><th scope="col" role="columnheader" data-field="Address" aria-haspopup="true" rowspan="1" data-title="Address" data-index="2" id="3fc45c9a-aebc-4862-be06-b8024124a84f" class="k-header" data-role="columnsorter"><a class="k-link keychainify-checked" href="https://permitsearch.mybuildingpermit.com/#">Address</a></th><th scope="col" role="columnheader" data-field="PermitType" aria-haspopup="true" rowspan="1" data-title="Type" data-index="3" id="033fa152-7056-47e7-87e3-e0b11826d96d" class="k-header" data-role="columnsorter"><a class="k-link keychainify-checked" href="https://permitsearch.mybuildingpermit.com/#">Type</a></th><th scope="col" role="columnheader" data-field="PermitStatus" aria-haspopup="true" rowspan="1" data-title="Status" data-index="4" id="e5ca1c6f-336a-487d-9bae-345d58310db9" class="k-header" data-role="columnsorter"><a class="k-link keychainify-checked" href="https://permitsearch.mybuildingpermit.com/#">Status</a></th><th scope="col" role="columnheader" data-field="AppliedDate" aria-haspopup="true" rowspan="1" data-title="Applied Date" data-index="5" id="1560bc48-1ced-4c1e-b070-b1c4fd0c9b50" class="k-header" data-role="columnsorter"><a class="k-link keychainify-checked" href="https://permitsearch.mybuildingpermit.com/#">Applied Date</a></th><th scope="col" role="columnheader" data-field="ApplicationExpDate" aria-haspopup="true" rowspan="1" data-title="Application Expiration" data-index="6" id="b57623e4-154b-43fc-acf5-e358c22ccd12" class="k-header" data-role="columnsorter"><a class="k-link keychainify-checked" href="https://permitsearch.mybuildingpermit.com/#">Application Expiration</a></th><th scope="col" role="columnheader" data-field="IssuedDate" aria-haspopup="true" rowspan="1" data-title="Issued Date" data-index="7" id="fda79b74-f366-414d-b27b-df74d846bf8b" style="display:none" class="k-header" data-role="columnsorter"><a class="k-link keychainify-checked" href="https://permitsearch.mybuildingpermit.com/#">Issued Date</a></th><th scope="col" role="columnheader" data-field="FinaledDate" aria-haspopup="true" rowspan="1" data-title="Finaled Date" data-index="8" id="e795a7ba-b91c-4c96-a5b7-fa59f7466fb5" style="display:none" class="k-header" data-role="columnsorter"><a class="k-link keychainify-checked" href="https://permitsearch.mybuildingpermit.com/#">Finaled Date</a></th><th scope="col" role="columnheader" data-field="Jurisdiction" aria-haspopup="true" rowspan="1" data-index="9" id="8f2870a1-60fc-476a-aa02-9f19fb279635" style="display:none" class="k-header" data-role="columnsorter"><a class="k-link keychainify-checked" href="https://permitsearch.mybuildingpermit.com/#">Jurisdiction</a></th></tr></thead></table></div></div><div class="k-grid-content k-auto-scrollable"><table role="treegrid"><colgroup><col class="k-hierarchy-col"><col style="width:15%"><col style="width:25%"><col style="width:25%"><col><col><col><col></colgroup><tbody role="rowgroup"><tr class="k-master-row" data-uid="6acbd0a5-94ef-4c28-84c7-31a3d6c4ff92" role="row"><td class="k-hierarchy-cell" aria-expanded="false"><a class="k-icon k-i-expand keychainify-checked" href="https://permitsearch.mybuildingpermit.com/#" aria-label="Expand" tabindex="-1"></a></td><td class="" role="gridcell"><a href="https://permitsearch.mybuildingpermit.com/PermitDetails/BFL26-0008/Auburn" target="_blank" class="keychainify-checked">BFL26-0008</a></td><td class="" role="gridcell">Estes Express Backflow Replace<br>Replace fire sprinkler backflow because existing backflow is no longer approved.</td><td class="KendoTooltip" role="gridcell">2102   WEST VALLEY HWY N</td><td class="KendoTooltip" role="gridcell">BACKFLOW PREMISE</td><td class="KendoTooltip" role="gridcell">IN REVIEW</td><td class="KendoTooltip" role="gridcell"> 02/05/2026</td><td class="KendoTooltip" role="gridcell"></td><td style="display:none" class="" role="gridcell"></td><td style="display:none" class="" role="gridcell"></td><td style="display:none" class="" role="gridcell">Auburn</td></tr><tr class="k-alt k-master-row" data-uid="bf8f9cf4-04b8-4a5d-b356-92f8a4ab4417" role="row"><td class="k-hierarchy-cell" aria-expanded="false"><a class="k-icon k-i-expand keychainify-checked" href="https://permitsearch.mybuildingpermit.com/#" aria-label="Expand" tabindex="-1"></a></td><td class="" role="gridcell"><a href="https://permitsearch.mybuildingpermit.com/PermitDetails/CON26-0034/Auburn" target="_blank" class="keychainify-checked">CON26-0034</a></td><td class="" role="gridcell">CSG 985256<br>Requesting to bore 176' in right of way and place 2 inch PVC.  Begin at pole on west side of 31624's property boring 28' west under road then 127' south then 10' under driveway then 11' west for service to 31705. Utility crossing to be potholed to ensure required separation is maintained, locations to be identified at pre con inspection.  All substructures have a 36 inch cover.</td><td class="KendoTooltip" role="gridcell">31705   102ND AVE SE</td><td class="KendoTooltip" role="gridcell">CONSTRUCTION</td><td class="KendoTooltip" role="gridcell">IN REVIEW</td><td class="KendoTooltip" role="gridcell"> 02/06/2026</td><td class="KendoTooltip" role="gridcell"></td><td style="display:none" class="" role="gridcell"></td><td style="display:none" class="" role="gridcell"></td><td style="display:none" class="" role="gridcell">Auburn</td></tr><tr class="k-master-row" data-uid="8d863473-52ff-4013-94d1-6db90d85fadb" role="row"><td class="k-hierarchy-cell" aria-expanded="false"><a class="k-icon k-i-expand keychainify-checked" href="https://permitsearch.mybuildingpermit.com/#" aria-label="Expand" tabindex="-1"></a></td><td class="" role="gridcell"><a href="https://permitsearch.mybuildingpermit.com/PermitDetails/FIR26-0016/Auburn" target="_blank" class="keychainify-checked">FIR26-0016</a></td><td class="" role="gridcell">FIRE<br>A (Alteration) (Fire Alarm) project involving 1 Number of Devices, The work involves a new fire alarm communicator, The work does not involve a new fire alarm panel or power supply, 5 alarm devices or less</td><td class="KendoTooltip" role="gridcell">1441   D ST NE</td><td class="KendoTooltip" role="gridcell">FIRE</td><td class="KendoTooltip" role="gridcell">ISSUED</td><td class="KendoTooltip" role="gridcell"> 02/05/2026</td><td class="KendoTooltip" role="gridcell"></td><td style="display:none" class="" role="gridcell"> 02/05/2026</td><td style="display:none" class="" role="gridcell"></td><td style="display:none" class="" role="gridcell">Auburn</td></tr><tr class="k-alt k-master-row" data-uid="84ac4b4b-11f1-4327-8c4a-56dd60090630" role="row"><td class="k-hierarchy-cell" aria-expanded="false"><a class="k-icon k-i-expand keychainify-checked" href="https://permitsearch.mybuildingpermit.com/#" aria-label="Expand" tabindex="-1"></a></td><td class="" role="gridcell"><a href="https://permitsearch.mybuildingpermit.com/PermitDetails/GRA26-0004/Auburn" target="_blank" class="keychainify-checked">GRA26-0004</a></td><td class="" role="gridcell">MIHAILA DETACHED (2) ADUs<br>associated site work for addition of two DADUs</td><td class="KendoTooltip" role="gridcell">903   7TH ST SE</td><td class="KendoTooltip" role="gridcell">GRADING</td><td class="KendoTooltip" role="gridcell">SCREENING</td><td class="KendoTooltip" role="gridcell"> 02/04/2026</td><td class="KendoTooltip" role="gridcell"></td><td style="display:none" class="" role="gridcell"></td><td style="display:none" class="" role="gridcell"></td><td style="display:none" class="" role="gridcell">Auburn</td></tr><tr class="k-master-row" data-uid="fb8f953d-1703-47d7-8a92-c1e4791a96f0" role="row"><td class="k-hierarchy-cell" aria-expanded="false"><a class="k-icon k-i-expand keychainify-checked" href="https://permitsearch.mybuildingpermit.com/#" aria-label="Expand" tabindex="-1"></a></td><td class="" role="gridcell"><a href="https://permitsearch.mybuildingpermit.com/PermitDetails/MEC26-0066/Auburn" target="_blank" class="keychainify-checked">MEC26-0066</a></td><td class="" role="gridcell">MECHANICAL<br>A (Single Family Residential) (Alteration) project involving 2 Ductless Heat Pump, 2 Total number of appliances being added or altered, 2 Exhaust Fan with duct - Bath, 1 Exhaust Fan with duct - Kitchen  - SF, 1 Exhaust Fan with Duct - Whole house, Single Family Dwelling, 3 Exhaust Fan with Duct</td><td class="KendoTooltip" role="gridcell">32626   46TH PL S</td><td class="KendoTooltip" role="gridcell">MECHANICAL</td><td class="KendoTooltip" role="gridcell">ISSUED</td><td class="KendoTooltip" role="gridcell"> 02/04/2026</td><td class="KendoTooltip" role="gridcell"></td><td style="display:none" class="" role="gridcell"> 02/04/2026</td><td style="display:none" class="" role="gridcell"></td><td style="display:none" class="" role="gridcell">Auburn</td></tr><tr class="k-alt k-master-row" data-uid="3a8ee41c-f5db-4800-9818-f18b3bc12683" role="row"><td class="k-hierarchy-cell" aria-expanded="false"><a class="k-icon k-i-expand keychainify-checked" href="https://permitsearch.mybuildingpermit.com/#" aria-label="Expand" tabindex="-1"></a></td><td class="" role="gridcell"><a href="https://permitsearch.mybuildingpermit.com/PermitDetails/MEC26-0067/Auburn" target="_blank" class="keychainify-checked">MEC26-0067</a></td><td class="" role="gridcell">MECHANICAL<br>A (Single Family Residential) (Addition) project involving 1 Total number of appliances being added or altered, 1 Exhaust Fan with duct - Bath, Single Family Dwelling, 1 Exhaust Fan with Duct</td><td class="KendoTooltip" role="gridcell">2514   17TH ST SE</td><td class="KendoTooltip" role="gridcell">MECHANICAL</td><td class="KendoTooltip" role="gridcell">ISSUED</td><td class="KendoTooltip" role="gridcell"> 02/04/2026</td><td class="KendoTooltip" role="gridcell"></td><td style="display:none" class="" role="gridcell"> 02/04/2026</td><td style="display:none" class="" role="gridcell"></td><td style="display:none" class="" role="gridcell">Auburn</td></tr><tr class="k-master-row" data-uid="b5c070dc-a4f3-4d9d-b59c-ce6dcdeb5767" role="row"><td class="k-hierarchy-cell" aria-expanded="false"><a class="k-icon k-i-expand keychainify-checked" href="https://permitsearch.mybuildingpermit.com/#" aria-label="Expand" tabindex="-1"></a></td><td class="" role="gridcell"><a href="https://permitsearch.mybuildingpermit.com/PermitDetails/MEC26-0068/Auburn" target="_blank" class="keychainify-checked">MEC26-0068</a></td><td class="" role="gridcell">MECHANICAL<br>A (Single Family Condominium Unit) (Repair or Replacement) project involving 1 Gas - Water Heater, 1 Total number of appliances being added or altered</td><td class="KendoTooltip" role="gridcell">5120   L PL NE</td><td class="KendoTooltip" role="gridcell">MECHANICAL</td><td class="KendoTooltip" role="gridcell">ISSUED</td><td class="KendoTooltip" role="gridcell"> 02/04/2026</td><td class="KendoTooltip" role="gridcell"></td><td style="display:none" class="" role="gridcell"> 02/04/2026</td><td style="display:none" class="" role="gridcell"></td><td style="display:none" class="" role="gridcell">Auburn</td></tr><tr class="k-alt k-master-row" data-uid="2edc0677-fa12-41bf-98c4-994c5bf89071" role="row"><td class="k-hierarchy-cell" aria-expanded="false"><a class="k-icon k-i-expand keychainify-checked" href="https://permitsearch.mybuildingpermit.com/#" aria-label="Expand" tabindex="-1"></a></td><td class="" role="gridcell"><a href="https://permitsearch.mybuildingpermit.com/PermitDetails/MEC26-0069/Auburn" target="_blank" class="keychainify-checked">MEC26-0069</a></td><td class="" role="gridcell">THE WILLOWS/ALICIAS DIV II LOT 14: PLAN 2230 ELEV-C<br>New Single Family Home lot 27 plan 2230 elevation C dropped garage left with 9ft 1st floor and extended covered patio options.</td><td class="KendoTooltip" role="gridcell">30310   125TH PL SE</td><td class="KendoTooltip" role="gridcell">MECHANICAL</td><td class="KendoTooltip" role="gridcell">IN REVIEW</td><td class="KendoTooltip" role="gridcell"> 02/04/2026</td><td class="KendoTooltip" role="gridcell"></td><td style="display:none" class="" role="gridcell"></td><td style="display:none" class="" role="gridcell"></td><td style="display:none" class="" role="gridcell">Auburn</td></tr><tr class="k-master-row" data-uid="d35384ab-1bc3-488a-8d5f-38872d3047bc" role="row"><td class="k-hierarchy-cell" aria-expanded="false"><a class="k-icon k-i-expand keychainify-checked" href="https://permitsearch.mybuildingpermit.com/#" aria-label="Expand" tabindex="-1"></a></td><td class="" role="gridcell"><a href="https://permitsearch.mybuildingpermit.com/PermitDetails/MEC26-0070/Auburn" target="_blank" class="keychainify-checked">MEC26-0070</a></td><td class="" role="gridcell">MECHANICAL<br>A (Single Family Residential) (Repair or Replacement) project involving 1 Total number of appliances being added or altered, Single Family Dwelling, 1 Furnace</td><td class="KendoTooltip" role="gridcell">6221   ANNETTE AVE SE</td><td class="KendoTooltip" role="gridcell">MECHANICAL</td><td class="KendoTooltip" role="gridcell">ISSUED</td><td class="KendoTooltip" role="gridcell"> 02/05/2026</td><td class="KendoTooltip" role="gridcell"></td><td style="display:none" class="" role="gridcell"> 02/05/2026</td><td style="display:none" class="" role="gridcell"></td><td style="display:none" class="" role="gridcell">Auburn</td></tr><tr class="k-alt k-master-row" data-uid="80f7002a-8e80-47df-b45d-1d0cde4da8c1" role="row"><td class="k-hierarchy-cell" aria-expanded="false"><a class="k-icon k-i-expand keychainify-checked" href="https://permitsearch.mybuildingpermit.com/#" aria-label="Expand" tabindex="-1"></a></td><td class="" role="gridcell"><a href="https://permitsearch.mybuildingpermit.com/PermitDetails/MEC26-0071/Auburn" target="_blank" class="keychainify-checked">MEC26-0071</a></td><td class="" role="gridcell">MECHANICAL<br>A (Single Family Residential) (Repair or Replacement) project involving 2 Total number of appliances being added or altered, Single Family Dwelling, 1 Furnace, 1 Heat Pump</td><td class="KendoTooltip" role="gridcell">725   37TH ST SE</td><td class="KendoTooltip" role="gridcell">MECHANICAL</td><td class="KendoTooltip" role="gridcell">ISSUED</td><td class="KendoTooltip" role="gridcell"> 02/05/2026</td><td class="KendoTooltip" role="gridcell"></td><td style="display:none" class="" role="gridcell"> 02/05/2026</td><td style="display:none" class="" role="gridcell"></td><td style="display:none" class="" role="gridcell">Auburn</td></tr><tr class="k-master-row" data-uid="c110df1d-4f97-47d6-b082-a5931cea219c" role="row"><td class="k-hierarchy-cell" aria-expanded="false"><a class="k-icon k-i-expand keychainify-checked" href="https://permitsearch.mybuildingpermit.com/#" aria-label="Expand" tabindex="-1"></a></td><td class="" role="gridcell"><a href="https://permitsearch.mybuildingpermit.com/PermitDetails/MEC26-0072/Auburn" target="_blank" class="keychainify-checked">MEC26-0072</a></td><td class="" role="gridcell">MECHANICAL<br>A (Single Family Residential) (Repair or Replacement) project involving 1 Total number of appliances being added or altered, Single Family Dwelling, 1 Furnace</td><td class="KendoTooltip" role="gridcell">7226   PERRY AVE SE</td><td class="KendoTooltip" role="gridcell">MECHANICAL</td><td class="KendoTooltip" role="gridcell">ISSUED</td><td class="KendoTooltip" role="gridcell"> 02/05/2026</td><td class="KendoTooltip" role="gridcell"></td><td style="display:none" class="" role="gridcell"> 02/05/2026</td><td style="display:none" class="" role="gridcell"></td><td style="display:none" class="" role="gridcell">Auburn</td></tr><tr class="k-alt k-master-row" data-uid="a50612b1-8672-40bb-a60f-517920172fd5" role="row"><td class="k-hierarchy-cell" aria-expanded="false"><a class="k-icon k-i-expand keychainify-checked" href="https://permitsearch.mybuildingpermit.com/#" aria-label="Expand" tabindex="-1"></a></td><td class="" role="gridcell"><a href="https://permitsearch.mybuildingpermit.com/PermitDetails/MEC26-0073/Auburn" target="_blank" class="keychainify-checked">MEC26-0073</a></td><td class="" role="gridcell">MECHANICAL<br>A (Single Family Residential) (Addition) project involving 2 Gas - Water Heater, 1 Gas - Stove or Cook Top, 10 Total number of appliances being added or altered, 4 Gas Piping Outlets - Mech, 2 Exhaust Fan with duct - Laundry, 2 Exhaust Fan with duct - Kitchen  - SF, 2 Exhaust Fan with Duct - Whole house, Duplex, 1 Furnace, 5 Exhaust Fan with Duct</td><td class="KendoTooltip" role="gridcell">308  E ST SE</td><td class="KendoTooltip" role="gridcell">MECHANICAL</td><td class="KendoTooltip" role="gridcell">ISSUED</td><td class="KendoTooltip" role="gridcell"> 02/07/2026</td><td class="KendoTooltip" role="gridcell"></td><td style="display:none" class="" role="gridcell"> 02/07/2026</td><td style="display:none" class="" role="gridcell"></td><td style="display:none" class="" role="gridcell">Auburn</td></tr><tr class="k-master-row" data-uid="ffa7b988-7671-4b7a-bded-6978fa92e230" role="row"><td class="k-hierarchy-cell" aria-expanded="false"><a class="k-icon k-i-expand keychainify-checked" href="https://permitsearch.mybuildingpermit.com/#" aria-label="Expand" tabindex="-1"></a></td><td class="" role="gridcell"><a href="https://permitsearch.mybuildingpermit.com/PermitDetails/PLM26-0015/Auburn" target="_blank" class="keychainify-checked">PLM26-0015</a></td><td class="" role="gridcell">PLUMBING<br>A (Single Family Residential) (Alteration) project involving 2 Toilet, 4 Sink, 1 Dishwasher, 1 Clothes Washer, 1 Hot Water Heater, 2 Shower, Tub or Combo, 2 Hose Bib, Existing Pipe Material, New Pipe Material, 11 Total number of fixtures being added or altered, Single Family Dwelling</td><td class="KendoTooltip" role="gridcell">32626   46TH PL S</td><td class="KendoTooltip" role="gridcell">PLUMBING</td><td class="KendoTooltip" role="gridcell">ISSUED</td><td class="KendoTooltip" role="gridcell"> 02/04/2026</td><td class="KendoTooltip" role="gridcell"></td><td style="display:none" class="" role="gridcell"> 02/04/2026</td><td style="display:none" class="" role="gridcell"></td><td style="display:none" class="" role="gridcell">Auburn</td></tr><tr class="k-alt k-master-row" data-uid="d5f57280-680a-4f56-9c82-333ce7d8bc4c" role="row"><td class="k-hierarchy-cell" aria-expanded="false"><a class="k-icon k-i-expand keychainify-checked" href="https://permitsearch.mybuildingpermit.com/#" aria-label="Expand" tabindex="-1"></a></td><td class="" role="gridcell"><a href="https://permitsearch.mybuildingpermit.com/PermitDetails/PLM26-0016/Auburn" target="_blank" class="keychainify-checked">PLM26-0016</a></td><td class="" role="gridcell">THE WILLOWS/ALICIAS DIV II LOT 14: PLAN 2230 ELEV-C<br>New Single Family Home lot 27 plan 2230 elevation C dropped garage left with 9ft 1st floor and extended covered patio options.</td><td class="KendoTooltip" role="gridcell">30310   125TH PL SE</td><td class="KendoTooltip" role="gridcell">PLUMBING</td><td class="KendoTooltip" role="gridcell">IN REVIEW</td><td class="KendoTooltip" role="gridcell"> 02/04/2026</td><td class="KendoTooltip" role="gridcell"></td><td style="display:none" class="" role="gridcell"></td><td style="display:none" class="" role="gridcell"></td><td style="display:none" class="" role="gridcell">Auburn</td></tr><tr class="k-master-row" data-uid="cd3f8b76-51bd-4a60-be5f-c8241dfb36c8" role="row"><td class="k-hierarchy-cell" aria-expanded="false"><a class="k-icon k-i-expand keychainify-checked" href="https://permitsearch.mybuildingpermit.com/#" aria-label="Expand" tabindex="-1"></a></td><td class="" role="gridcell"><a href="https://permitsearch.mybuildingpermit.com/PermitDetails/PRE26-0010/Auburn" target="_blank" class="keychainify-checked">PRE26-0010</a></td><td class="" role="gridcell">32619 58TH AVE S<br>14 lot plat with 2-4 attached dwelling units per lot, for a total of 50 units.</td><td class="KendoTooltip" role="gridcell">32619   58TH AVE S</td><td class="KendoTooltip" role="gridcell">PREAPP MTG</td><td class="KendoTooltip" role="gridcell">IN REVIEW</td><td class="KendoTooltip" role="gridcell"> 02/05/2026</td><td class="KendoTooltip" role="gridcell"></td><td style="display:none" class="" role="gridcell"></td><td style="display:none" class="" role="gridcell"></td><td style="display:none" class="" role="gridcell">Auburn</td></tr><tr class="k-alt k-master-row" data-uid="34ccf3f5-ab17-4ee7-ae5c-18e2eef28593" role="row"><td class="k-hierarchy-cell" aria-expanded="false"><a class="k-icon k-i-expand keychainify-checked" href="https://permitsearch.mybuildingpermit.com/#" aria-label="Expand" tabindex="-1"></a></td><td class="" role="gridcell"><a href="https://permitsearch.mybuildingpermit.com/PermitDetails/ROW26-0005/Auburn" target="_blank" class="keychainify-checked">ROW26-0005</a></td><td class="" role="gridcell">8' x 16' POD at 5810 Olive Ave</td><td class="KendoTooltip" role="gridcell">5810   OLIVE AVE SE</td><td class="KendoTooltip" role="gridcell">RIGHT OF WAY</td><td class="KendoTooltip" role="gridcell">APPLIED</td><td class="KendoTooltip" role="gridcell"> 02/04/2026</td><td class="KendoTooltip" role="gridcell"></td><td style="display:none" class="" role="gridcell"></td><td style="display:none" class="" role="gridcell"></td><td style="display:none" class="" role="gridcell">Auburn</td></tr><tr class="k-master-row" data-uid="947cd70e-fe05-44a1-95eb-06dd087ebc0d" role="row"><td class="k-hierarchy-cell" aria-expanded="false"><a class="k-icon k-i-expand keychainify-checked" href="https://permitsearch.mybuildingpermit.com/#" aria-label="Expand" tabindex="-1"></a></td><td class="" role="gridcell"><a href="https://permitsearch.mybuildingpermit.com/PermitDetails/SGN26-0006/Auburn" target="_blank" class="keychainify-checked">SGN26-0006</a></td><td class="" role="gridcell">Sound Health 8460-(1) Wall sign<br>Removal of (1) monument and Installation of (1)  non illuminated monument in its place.</td><td class="KendoTooltip" role="gridcell">4238   AUBURN WAY N</td><td class="KendoTooltip" role="gridcell">SIGNS</td><td class="KendoTooltip" role="gridcell">IN REVIEW</td><td class="KendoTooltip" role="gridcell"> 02/06/2026</td><td class="KendoTooltip" role="gridcell"></td><td style="display:none" class="" role="gridcell"></td><td style="display:none" class="" role="gridcell"></td><td style="display:none" class="" role="gridcell">Auburn</td></tr><tr class="k-alt k-master-row" data-uid="36ea9d56-91d3-4303-b755-ecd7995f2ed8" role="row"><td class="k-hierarchy-cell" aria-expanded="false"><a class="k-icon k-i-expand keychainify-checked" href="https://permitsearch.mybuildingpermit.com/#" aria-label="Expand" tabindex="-1"></a></td><td class="" role="gridcell"><a href="https://permitsearch.mybuildingpermit.com/PermitDetails/SGN26-0007/Auburn" target="_blank" class="keychainify-checked">SGN26-0007</a></td><td class="" role="gridcell">AutoZone #4125-(1) Wall Sign<br>AutoZone #4125 Auburn Remove &amp; replace existing sign with x1 new illuminated wall Sign</td><td class="KendoTooltip" role="gridcell">1072   AUBURN WAY N</td><td class="KendoTooltip" role="gridcell">SIGNS</td><td class="KendoTooltip" role="gridcell">IN REVIEW</td><td class="KendoTooltip" role="gridcell"> 02/06/2026</td><td class="KendoTooltip" role="gridcell"></td><td style="display:none" class="" role="gridcell"></td><td style="display:none" class="" role="gridcell"></td><td style="display:none" class="" role="gridcell">Auburn</td></tr><tr class="k-master-row" data-uid="ce01f5d0-d05c-45ea-b901-b8596045f7f1" role="row"><td class="k-hierarchy-cell" aria-expanded="false"><a class="k-icon k-i-expand keychainify-checked" href="https://permitsearch.mybuildingpermit.com/#" aria-label="Expand" tabindex="-1"></a></td><td class="" role="gridcell"><a href="https://permitsearch.mybuildingpermit.com/PermitDetails/SWR26-0016/Auburn" target="_blank" class="keychainify-checked">SWR26-0016</a></td><td class="" role="gridcell">AAA WASHINGTON INSURANCE AGENCY<br>7 FT SPOT REPAIR PRIVATE PROPERTY.</td><td class="KendoTooltip" role="gridcell">903  E ST SE</td><td class="KendoTooltip" role="gridcell">SEWER</td><td class="KendoTooltip" role="gridcell">ISSUED</td><td class="KendoTooltip" role="gridcell"> 02/05/2026</td><td class="KendoTooltip" role="gridcell"></td><td style="display:none" class="" role="gridcell"> 02/06/2026</td><td style="display:none" class="" role="gridcell"></td><td style="display:none" class="" role="gridcell">Auburn</td></tr><tr class="k-alt k-master-row" data-uid="0453ff4b-7ab6-42c1-839f-286729e7c414" role="row"><td class="k-hierarchy-cell" aria-expanded="false"><a class="k-icon k-i-expand keychainify-checked" href="https://permitsearch.mybuildingpermit.com/#" aria-label="Expand" tabindex="-1"></a></td><td class="" role="gridcell"><a href="https://permitsearch.mybuildingpermit.com/PermitDetails/TEN26-0009/Auburn" target="_blank" class="keychainify-checked">TEN26-0009</a></td><td class="" role="gridcell">INTERIOR REPAIRS AFTER KITCHEN FIRE<br>Repairs to interior of home after a small kitchen fire. Another company did the mitigation work and we are to perform the repairs to the interior of the home. There are no structural repairs. Only mechanical repairs are to the bathroom exhaust fan upstairs. This will get replaced as well as its duct. We are accounting for an entire rewire of the unit, plumbing will be trim out, except the tub-shower combo is set for replacement. Reinsulate entire attic over all four units to current code. Then it is entire unit finishes from drywall in, new doors, millwork, flooring, cabinets, countertops and so on.</td><td class="KendoTooltip" role="gridcell">903   31ST ST NE</td><td class="KendoTooltip" role="gridcell">TENANTIMPROVEMENT</td><td class="KendoTooltip" role="gridcell">APPROVED</td><td class="KendoTooltip" role="gridcell"> 02/04/2026</td><td class="KendoTooltip" role="gridcell"></td><td style="display:none" class="" role="gridcell"></td><td style="display:none" class="" role="gridcell"></td><td style="display:none" class="" role="gridcell">Auburn</td></tr><tr class="k-master-row" data-uid="8eaf3d04-fb62-42cb-b6bb-a1081c8ddef6" role="row"><td class="k-hierarchy-cell" aria-expanded="false"><a class="k-icon k-i-expand keychainify-checked" href="https://permitsearch.mybuildingpermit.com/#" aria-label="Expand" tabindex="-1"></a></td><td class="" role="gridcell"><a href="https://permitsearch.mybuildingpermit.com/PermitDetails/TEN26-0010/Auburn" target="_blank" class="keychainify-checked">TEN26-0010</a></td><td class="" role="gridcell">GOR GAI-Ceiling Alterations<br>Removing the original ceiling.</td><td class="KendoTooltip" role="gridcell">614  E MAIN ST</td><td class="KendoTooltip" role="gridcell">TENANTIMPROVEMENT</td><td class="KendoTooltip" role="gridcell">APPROVED</td><td class="KendoTooltip" role="gridcell"> 02/04/2026</td><td class="KendoTooltip" role="gridcell"></td><td style="display:none" class="" role="gridcell"></td><td style="display:none" class="" role="gridcell"></td><td style="display:none" class="" role="gridcell">Auburn</td></tr><tr class="k-alt k-master-row" data-uid="ad7cde11-37e0-4e44-b096-57c14a413389" role="row"><td class="k-hierarchy-cell" aria-expanded="false"><a class="k-icon k-i-expand keychainify-checked" href="https://permitsearch.mybuildingpermit.com/#" aria-label="Expand" tabindex="-1"></a></td><td class="" role="gridcell"><a href="https://permitsearch.mybuildingpermit.com/PermitDetails/TEN26-0011/Auburn" target="_blank" class="keychainify-checked">TEN26-0011</a></td><td class="" role="gridcell">SUITE 101/STACK BURGER DEMO TO SHELL-ONLY FOR BECU TI<br>Interior demolition only for the purpose of de-tenanting the existing commercial suite. Removal of non-load-bearing partitions, ceilings, finishes, millwork and tenant mechanical, electrical and plumbing systems.</td><td class="KendoTooltip" role="gridcell">7096   LAKELAND HILLS WAY SE</td><td class="KendoTooltip" role="gridcell">TENANTIMPROVEMENT</td><td class="KendoTooltip" role="gridcell">IN REVIEW</td><td class="KendoTooltip" role="gridcell"> 02/05/2026</td><td class="KendoTooltip" role="gridcell"></td><td style="display:none" class="" role="gridcell"></td><td style="display:none" class="" role="gridcell"></td><td style="display:none" class="" role="gridcell">Auburn</td></tr><tr class="k-master-row" data-uid="e933e74a-71d7-4ac2-befd-69ef5966694b" role="row"><td class="k-hierarchy-cell" aria-expanded="false"><a class="k-icon k-i-expand keychainify-checked" href="https://permitsearch.mybuildingpermit.com/#" aria-label="Expand" tabindex="-1"></a></td><td class="" role="gridcell"><a href="https://permitsearch.mybuildingpermit.com/PermitDetails/WCF26-0004/Auburn" target="_blank" class="keychainify-checked">WCF26-0004</a></td><td class="" role="gridcell">T-MOBILE RADIO SWAP-SE4611A<br>Remove (3) AHLOA radios and replace with (3) AHLOB radios.</td><td class="KendoTooltip" role="gridcell">1002   37TH ST NW</td><td class="KendoTooltip" role="gridcell">WIRELESS COMMUNICATION FACILITIES</td><td class="KendoTooltip" role="gridcell">IN REVIEW</td><td class="KendoTooltip" role="gridcell"> 02/04/2026</td><td class="KendoTooltip" role="gridcell"></td><td style="display:none" class="" role="gridcell"></td><td style="display:none" class="" role="gridcell"></td><td style="display:none" class="" role="gridcell">Auburn</td></tr></tbody></table></div><div class="k-pager-wrap k-grid-pager k-widget k-floatwrap" data-role="pager"><span class="k-pager-info k-label">Total: 23 records</span></div></div>
+        </div>
+    </div>
+    
+    
+
+    <input name="__RequestVerificationToken" type="hidden" value="pvqsc07bM8Jc3KG5dfFEkPJJt2llR1VSvo_ByeyLNzZGi8YWBX5tY2GH1z2fRanQAV6rV7ZDU9NScO0PuX6gmL8KBaFMS46gi0GvJ3iTZ1I1">
+</form>
+
+ 
+                </div>
+            </div>
+        </div>
+
+    </section>
+	<a class="scrollToTop" title="Scroll to top" style="display: block; opacity: 0.184324;"></a>
+<footer class="footer">
+    <div class="container-fluid">
+        <div class="row row-spacer">
+            <div class="col-xs-12">
+                <p class="text-center">
+                    Copyright © 2026 eCityGov Alliance. <br>
+PRODUCTION v:5.1.0.1
+                </p>
+            </div>
+        </div>
+    </div>
+</footer>
+    
+    <script src="./Permit Status - MyBuildingPermit_files/jquery.validate.js.Без названия"></script>
+
+    <script src="./Permit Status - MyBuildingPermit_files/Search.js.Без названия"></script>
+
+
+    <script type="text/x-kendo-template" id="permitTypesTemplate">
+        #if(Description !== null && Description !== ''){#
+        <li class="list-group-item"><b>Type:</b> #= Text #<br /><b>Description:</b> #= Description #</li>
+        #} #
+    </script>
+    <script type="text/x-kendo-template" id="permitStatusTemplate">
+        #if(Description !== null && Description !== ''){#
+        <li class="list-group-item"><b>Status:</b> #= Status #<br /><b>Description:</b> #= Description #</li>
+        #} #
+    </script>
+
+    <script type="text/javascript">
+        $(document).ready(function () {
+            $('#divPermitSearch').show();
+            var spanHelp =
+                $(
+                    "<span class='glyphicon glyphicon-question-sign helpLink' id='permitTypeHelpImg' onclick='ShowHelpWindow(1);return false;'></span>");
+            $("#lblPermitTypes").append(spanHelp);
+            spanHelp.hide();
+
+            var permitTypesWindow = $("#permitTypesWindow");
+
+            permitTypesWindow.kendoWindow({
+                visible: false,
+                width: "615px",
+                height: 400,
+                title: "Permit Type Definitions",
+                position: {
+                    top: "35%",
+                    left: "45%"
+                },
+                actions: ["Close"],
+                scrollable: true
+            });
+
+            /**
+             *
+             */
+            var spanStatusHelp =
+                $(
+                    "<span class='glyphicon glyphicon-question-sign helpLink' id='permitStatusHelpImg' onclick='ShowHelpWindow(2);return false;'></span>");
+            $("#lblPermitStatuses").append(spanStatusHelp);
+            spanStatusHelp.hide();
+
+            var permitStatusesWindow = $("#permitStatusesWindow");
+
+            permitStatusesWindow.kendoWindow({
+                visible: false,
+                width: "615px",
+                height: 400,
+                title: "Permit Status Definitions",
+                position: {
+                    top: "35%",
+                    left: "45%"
+                },
+                actions: ["Close"],
+                scrollable: true
+            });
+
+            ////initialize the kendo dropdownlist.
+            $("#ddlJurisdictions").kendoDropDownList({
+                autoBind: true,
+                dataTextField: "Name",
+                dataValueField: "Id",
+                dataSource: {
+                    serverFiltering: true
+                },
+                change: function () {
+                    var ddlPermitTypes = $("#ddlPermitTypes").data("kendoMultiSelect");
+                    var ddlPermitStatuses = $("#ddlPermitStatuses").data("kendoMultiSelect");
+                    var helpbtn = $("#permitTypeHelpImg");
+                    var helpSbtn = $("#permitStatusHelpImg");
+                    if (this.value() == null || this.value() === '' || this.value() === -1) {
+                        ddlPermitTypes.enable(false);
+                        ddlPermitTypes.dataSource.data([]); // clears dataSource
+                        helpbtn.hide();
+                        helpSbtn.hide();
+                        ddlPermitStatuses.enable(false);
+                        ddlPermitStatuses.dataSource
+                            .data([]); // clears dataSource
+                        $("#btnSearch").attr('disabled', true);
+                        clearSearchCriteria();
+                    } else {
+                        $('#gridContainer').addClass('hidden');
+                        getJurisdictionMessage();
+                        ddlPermitTypes.enable(true);
+                        ddlPermitTypes.dataSource.read();
+                        helpbtn.show();
+                        helpSbtn.show();
+                        ddlPermitStatuses.enable(true);
+                        ddlPermitStatuses.dataSource.read();
+                        $("#btnSearch").attr('disabled', false);
+                    }
+                }
+            });
+
+
+            $("#ddlPermitTypes").kendoMultiSelect({
+                autoBind: false,
+                placeholder: "-- Select Types --",
+                enable: false,
+                dataTextField: "Text",
+                dataValueField: "Value",
+                noDataTemplate: "No data.",
+                filter: "contains",
+                ignoreCase: true,
+                dataSource: {
+                    serverFiltering: false,
+                    transport: {
+                        read: {
+                            url: "/SearchPermits/GetPermitTypes",
+                            type: "GET",
+                            dataType: "json",
+                            data: {
+                                jurisId: function () {
+                                    return $("#ddlJurisdictions").val();
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+
+            $("#ddlPermitStatuses").kendoMultiSelect({
+                autoBind: false,
+                placeholder: "-- Select Statuses --",
+                enable: false,
+                dataTextField: "Text",
+                dataValueField: "Value",
+                noDataTemplate: "No data.",
+                filter: "contains",
+                ignoreCase: true,
+                dataSource: {
+                    serverFiltering: false,
+                    transport: {
+                        read: {
+                            url: "/SearchPermits/GetPermitStatuses",
+                            type: "GET",
+                            dataType: "json",
+                            data: {
+                                jurisId: function () {
+                                    return $("#ddlJurisdictions").val();
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+
+            $("#ddlDateRanges").kendoMultiSelect({
+                placeholder: "-- Select One --",
+                dataTextField: "Text",
+                dataValueField: "Value",
+                noDataTemplate: "No data.",
+                change: toggleDateControls
+            });
+
+            $("#FromDate").kendoDatePicker({
+                format: "MM/dd/yyyy",
+                parseFormats: ["yyyy/MM/dd", "MM-dd-yyyy"],
+                start: "month",
+                depth: "year",
+                change: validateDates
+            });
+
+            $("#ToDate").kendoDatePicker({
+                format: "MM/dd/yyyy",
+                parseFormats: ["yyyy/MM/dd", "MM-dd-yyyy"],
+                start: "month",
+                depth: "year",
+                change: validateDates
+            });
+
+            var startDate = $("#FromDate").data("kendoDatePicker");
+            var endDate = $("#ToDate").data("kendoDatePicker");
+            startDate.readonly(), endDate.readonly();
+
+            $("#FromDate").on('click',
+                function () {
+                    var e = this;
+                    if (!$(e).attr('readonly')) {
+                        var mydatePicker = $('#FromDate').data("kendoDatePicker");
+                        if ($('#FromDate_dateview').css('display') === 'none') {
+                            mydatePicker.open();
+                        } else {
+                            mydatePicker.close();
+                        }
+                    }
+                });
+
+            $("#FromDate").blur(function (e) {
+                $this = $(this);
+                setTimeout(function () {
+                    if ($this.val() && !isValidDate($this.val())) {
+                        alert('Please enter valid date.');
+                        $this.val("");
+                    }
+                }, 1);
+            });
+
+            $("#ToDate").on('click',
+                function () {
+                    var e = this;
+                    if (!$(e).attr('readonly')) {
+                        var mydatePicker = $('#ToDate').data("kendoDatePicker");
+                        if ($('#ToDate_dateview').css('display') === 'none') {
+                            mydatePicker.open();
+                        } else {
+                            mydatePicker.close();
+                        }
+                    }
+                });
+
+            $("#ToDate").blur(function (e) {
+                $this = $(this);
+                setTimeout(function () {
+                    if ($this.val() && !isValidDate($this.val())) {
+                        alert('Please enter valid date.');
+                        $this.val("");
+                    }
+                }, 1);
+            });
+
+            $("#searchResultsGrid")
+                .kendoGrid({
+                    sortable: true,
+                    scrollable: true,
+                    toolbar: ["excel"],
+                    excel: {
+                        fileName: "SearchResults.xlsx",
+                        allPages: true,
+                        filterable: true
+                    },
+                    noRecords: {
+                        template:
+                        "<span>No results were found matching the above criteria</span>"
+                    },
+                    pageable: {
+                        previousNext: false,
+                        numeric: false,
+                        messages: {
+                            display: "Total: {2} records"
+                        }
+                    },
+                    columns: [
+                        {
+                            field: "PermitNumber",
+                            title: "Permit #",
+                            template:
+                            "<a href='/PermitDetails/#= PermitNumber #/#= Jurisdiction #' target='_blank'>#= PermitNumber #</a>",
+                            width: "15%"
+                        },
+                        {
+                            field: "PermitDescription",
+                            title: "Description",
+                            template: "#= PermitDescription #",
+                            width: "25%"
+                        },
+                        {
+                            field: "Address",
+                            title: "Address",
+                            width: "25%",
+                            attributes: {
+                                "class": "KendoTooltip"
+                            }
+                        },
+                        {
+                            field: "PermitType",
+                            title: "Type",
+                            attributes: {
+                                "class": "KendoTooltip"
+                            }
+                        },
+                        {
+                            field: "PermitStatus",
+                            title: "Status",
+                            attributes: {
+                                "class": "KendoTooltip"
+                            }
+                        },
+                        {
+                            field: "AppliedDate",
+                            title: "Applied Date",
+                            format: "{0: MM/dd/yyyy}",
+                            attributes: {
+                                "class": "KendoTooltip"
+                            }
+                        },
+                        {
+                            field: "ApplicationExpDate",
+                            title: "Application Expiration",
+                            format: "{0: MM/dd/yyyy}",
+                            attributes: {
+                                "class": "KendoTooltip"
+                            }
+                        },
+                        {
+                            field: "IssuedDate",
+                            title: "Issued Date",
+                            format: "{0: MM/dd/yyyy}",
+                            hidden: true
+                        },
+                        {
+                            field: "FinaledDate",
+                            title: "Finaled Date",
+                            format: "{0: MM/dd/yyyy}",
+                            hidden: true
+                        },
+                        {
+                            field: "Jurisdiction",
+                            hidden: true
+                        }
+                    ],
+                    detailTemplate: "<div><b>Description:</b></div><div>#= PermitDescription #</div>",
+                    dataBound: function (e) {
+                        //remove arrow icon if description is empty.
+                        var items = e.sender.items();
+                        items.each(function () {
+                            var row = $(this);
+                            var dataItem = e.sender.dataItem(row);
+                            if (dataItem.PermitDescription === null || dataItem.PermitDescription === "") {
+                                row.find(".k-hierarchy-cell").html("");
+                                row.attr("style", "cursor: default");
+                            }
+                        });
+
+                        var grid = e.sender;
+                        grid.tbody.find("tr.k-master-row").click(function (e) {
+                            var target = $(e.target);
+                            if ((target.hasClass("k-i-expand")) || (target.hasClass("k-i-collapse"))) {
+                                return;
+                            }
+
+                            var row = target.closest("tr.k-master-row");
+                            var icon = row.find(".k-i-expand");
+
+                            if (icon.length) {
+                                grid.expandRow(row);
+                            } else {
+                                grid.collapseRow(row);
+                            }
+                        });
+                    }
+                });
+
+
+            var exportFlag = false;
+            $("#searchResultsGrid").data("kendoGrid").bind("excelExport",
+                function (e) {
+                    if (e.sender.dataSource.total() === 0) {
+                        e.preventDefault();
+                        alert("No data to export!");
+                        return;
+                    }
+                    if (!exportFlag) {
+                        e.sender.showColumn(7);
+                        e.sender.showColumn(8);
+                        e.preventDefault();
+                        exportFlag = true;
+                        setTimeout(function () {
+                            e.sender.saveAsExcel();
+                        });
+                    } else {
+                        e.sender.hideColumn(7);
+                        e.sender.hideColumn(8);
+                        exportFlag = false;
+                    }
+                });
+
+            $("#searchResultsGrid").kendoTooltip({
+                filter: "td.KendoTooltip",
+                position: "down",
+                content: function (e) {
+                    return e.target.text();
+                }
+            });
+
+
+            $.validator.setDefaults({
+                ignore: [],
+                errorElement: "span",
+                highlight: function (element) {
+                    $(element).closest('.form-group').addClass('has-error');
+                },
+                unhighlight: function (element) {
+                    $(element).closest('.form-group').removeClass('has-error');
+                },
+                errorClass: 'help-block',
+                errorPlacement: function (error, element) {
+                    if (element.parent('div').length) {
+                        error.insertAfter(element);
+                    } else {
+                        error.insertAfter(element.parent('span'));
+                    }
+                }
+            });
+
+
+            $("#permitSearchForm").validate({
+                debug: false,
+                rules: {
+                    JurisId: {
+                        required: true
+                    },
+                    PermitNumber:
+                    {
+                        required: "#radioPermitNum:checked",
+                        minlength: 1,
+                        normalizer: function (value) { return $.trim(value); }
+                    },
+                    ProjectName: {
+                        projectInfoMinFieldsRequired: true
+                    },
+                    SelectedPermitTypes: {
+                        projectInfoMinFieldsRequired: true
+                    },
+                    SelectedPermitStatuses: {
+                        projectInfoMinFieldsRequired: true
+                    },
+                    FromDate: {
+                        fromDateRangeRequired: true
+                    },
+                    ToDate: {
+                        toDateRangeRequired: true
+                    },
+                    HouseBldgNum: {
+                        locationMinFieldsRequired: true
+                    },
+                    StreetName: {
+                        locationMinFieldsRequired: true
+                    },
+                    ParcelNum: {
+                        locationMinFieldsRequired: true
+                    },
+                    ContractorCompany: {
+                        peopleMinFieldsRequired: true
+                    },
+                    ContractorLicNum: {
+                        peopleMinFieldsRequired: true
+                    },
+                    ApplicantLastName: {
+                        peopleMinFieldsRequired: true
+                    }
+                },
+                messages: {
+                    JurisId: "Please select a jurisdiction.",
+                    PermitNumber: "Enter a permit number"
+                },
+                groups: {
+                    ProjectInfo: "ProjectName SelectedPermitTypes SelectedPermitStatuses",
+                    Location: "HouseBldgNum StreetName ParcelNum",
+                    People: "ContractorCompany ContractorLicNum ApplicantLastName"
+                },
+
+                submitHandler: function () {
+                    var formData = $("#permitSearchForm").serialize();
+
+                    $('#gridContainer').addClass('hidden');
+                    $('#divWaitMessage').removeClass('hidden');
+                    $('#searchError').addClass('hidden');
+
+
+                    $.ajax({
+                        type: "POST",
+                        dataType: "json",
+                        url: "/SearchPermits/GetSearchResults",
+                        data: formData
+                    })
+                        .done(function (result) {
+                            $('#divWaitMessage').addClass('hidden');
+
+                            if (result !== '', result.success !== typeof (undefined) && result.success === false) {
+                                $('#searchError').html(result.ErrorMessage);
+                                $('#searchError').removeClass('hidden');
+                                $('#gridContainer').addClass('hidden');
+                            } else {
+                                if (result !== "") {
+                                    bindResultsGrid(result);
+                                    $('#gridContainer').removeClass('hidden');
+                                    $('#divWaitMessage').addClass('hidden');
+                                }
+                            }
+                        })
+                        .fail(function (result) {
+                            $('#divWaitMessage').addClass('hidden');
+                            $('#gridContainer').addClass('hidden');
+                            if (result.responseJSON.ErrorMessage && result.responseJSON.ErrorMessage !== "") {
+                                $('#searchError').html(result.responseJSON.ErrorMessage);
+                                $('#searchError').removeClass('hidden');
+                            } else {
+                                $('#searchError').html('');
+                                $('#searchError').addClass('hidden');
+                            }
+                        });
+
+                    return false;
+
+                }
+            });
+
+
+            $.validator.addMethod("projectInfoMinFieldsRequired",
+                function (value, element, options) {
+                    if ($('input[type="radio"]:checked').val().toLowerCase() === "projectinfo") {
+                        var projectInfoElements = $('input.projectInfo-group, select.projectInfo-group');
+                        var projValid = false;
+                        $(projectInfoElements).each(
+                            function () {
+                                if ($(this).val() !== null && $(this).val() !== '') {
+                                    projValid = true;
+                                    return false;
+                                }
+                                return true;
+                            });
+                        return projValid;
+                        //} else if ($('input[type="radio"]:checked').val() === "Location") {
+                        //    var locationElements = $('input.location-group, select.location-group');
+                        //    var locValid = false;
+                        //    $(locationElements).each(
+                        //        function() {
+                        //            if ($(this).val() !== null && $(this).val() !== '') {
+                        //                locValid = true;
+                        //                return false;
+                        //            }
+                        //            return true;
+                        //        });
+                        //    return locValid;
+                        //} else if ($('input[type="radio"]:checked').val().toLowerCase() === "people") {
+                        //    var peopleElements = $('input.people-group, select.people-group');;
+                        //    var peopleValid = false;
+                        //    $(peopleElements).each(
+                        //        function() {
+                        //            if ($(this).val() !== null && $(this).val() !== '') {
+                        //                peopleValid = true;
+                        //                return false;
+                        //            }
+                        //            return true;
+                        //        });
+                        //    return peopleValid;
+                    }
+                    return true;
+                },
+                "Please enter at least one criteria to search.");
+        });
+
+
+        function ShowHelpWindow(type) {
+
+            var templateHtml = null;
+            var template = null;
+
+            if (type === 1) {
+                templateHtml = $("#permitTypesTemplate").html();
+                template = kendo.template(templateHtml);
+                $.ajax({
+                    type: "GET",
+                    dataType: "json",
+                    url: "/SearchPermits/GetPermitTypes?jurisId=" + $("#ddlJurisdictions").val()
+                }).done(function (result) {
+                    if (result && result.length > 0) {
+                        $("#permitTypesWindow").data("kendoWindow")
+                            .content("<ul class='list-unstyled'>" + kendo.render(template, result) + "</ul>");
+                    } else {
+                        $("#permitTypesWindow").data("kendoWindow")
+                            .content("<br/><b>Permit Type Descriptions Not Found</b>");
+                    }
+                }).fail(function (error) {
+                    if (error.status === 500) {
+                        $("#permitTypesWindow").data("kendoWindow")
+                            .content("<br /><b>" + error.responseJSON.ErrorMessage + "</b>");
+                    }
+                });
+
+                $("#permitTypesWindow").data("kendoWindow").open();
+            } else {
+                templateHtml = $("#permitStatusTemplate").html();
+                template = kendo.template(templateHtml);
+
+                $.ajax({
+                    type: "GET",
+                    dataType: "json",
+                    url: "/SearchPermits/GetPermitStatuses?jurisId=" + $("#ddlJurisdictions").val()
+                }).done(function (result) {
+                    if (result && result.length > 0) {
+                        $("#permitStatusesWindow").data("kendoWindow")
+                            .content("<ul class='list-unstyled'>" + kendo.render(template, result) + "</ul>");
+                    } else {
+                        $("#permitStatusesWindow").data("kendoWindow")
+                            .content("<br/><b>Permit Status Descriptions Not Found</b>");
+                    }
+                }).fail(function (error) {
+                    if (error.status === 500) {
+                        $("#permitStatusesWindow").data("kendoWindow")
+                            .content("<br /><b>" + error.responseJSON.ErrorMessage + "</b>");
+                    }
+                });
+
+                $("#permitStatusesWindow").data("kendoWindow").open();
+            }
+        }
+
+        $.validator.addMethod("locationMinFieldsRequired",
+            function (value, element, options) {
+                if ($('input[type="radio"]:checked').val().toLowerCase() === "location") {
+                    var locationElements = $('input.location-group, select.location-group');
+                    var locValid = false;
+                    $(locationElements).each(
+                        function () {
+                            if ($(this).val() !== null && $(this).val() !== '') {
+                                locValid = true;
+                                return false;
+                            }
+                            return true;
+                        });
+                    return locValid;
+                }
+                return true;
+            },
+            "Please enter at least one criteria to search."
+        );
+
+        $.validator.addMethod("peopleMinFieldsRequired",
+            function (value, element, options) {
+                if ($('input[type="radio"]:checked').val().toLowerCase() === "people") {
+                    var peopleElements = $('input.people-group, select.people-group');;
+                    var peopleValid = false;
+                    $(peopleElements).each(
+                        function () {
+                            if ($(this).val() !== null && $(this).val() !== '') {
+                                peopleValid = true;
+                                return false;
+                            }
+                            return true;
+                        });
+                    return peopleValid;
+                }
+                return true;
+            },
+            "Please enter at least one criteria to search."
+        );
+
+        $.validator.addMethod("fromDateRangeRequired",
+            function (value, element, options) {
+                if ($("#ddlDateRanges").val() && value.length === 0) {
+                    return false;
+                } else {
+                    return true;
+                }
+            },
+            "Required: From Date.");
+
+        $.validator.addMethod("toDateRangeRequired",
+            function (value, element, options) {
+                if ($("#ddlDateRanges").val() && value.length === 0) {
+                    return false;
+                } else {
+                    return true;
+                }
+            },
+            "Required: To Date.");
+    </script>
+
+	<script type="text/javascript">  
+	    $(document).ready(function () {
+	        //Check to see if the window is top if not then display button
+	        $(window).scroll(function () {
+	            if ($(this).scrollTop() > 100) {
+	                $(".scrollToTop").fadeIn();
+
+	            } else {
+	                $(".scrollToTop").fadeOut();
+	            }
+	        });
+
+	        $(".scrollToTop").click(function () {
+	            $('html,body').animate({ scrollTop: 0 }, 800);
+	            return false;
+	        });
+
+	    });
+	</script>
+
+
+<div class="k-widget k-window" data-role="draggable" style="padding-top: 33px; min-width: 90px; min-height: 50px; width: 615px; height: 400px; display: none; top: 35%; left: 45%;"><div class="k-window-titlebar k-header" style="margin-top: -33px;">&nbsp;<span class="k-window-title" id="permitTypesWindow_wnd_title">Permit Type Definitions</span><div class="k-window-actions"><a role="button" href="https://permitsearch.mybuildingpermit.com/#" class="k-button k-bare k-button-icon k-window-action keychainify-checked" aria-label="Close"><span class="k-icon k-i-close"></span></a></div></div><div id="permitTypesWindow" data-role="window" class="k-window-content k-content" tabindex="0" role="dialog" aria-labelledby="permitTypesWindow_wnd_title"></div><div class="k-resize-handle k-resize-n"></div><div class="k-resize-handle k-resize-e"></div><div class="k-resize-handle k-resize-s"></div><div class="k-resize-handle k-resize-w"></div><div class="k-resize-handle k-resize-se"></div><div class="k-resize-handle k-resize-sw"></div><div class="k-resize-handle k-resize-ne"></div><div class="k-resize-handle k-resize-nw"></div></div><div class="k-widget k-window" data-role="draggable" style="padding-top: 33px; min-width: 90px; min-height: 50px; width: 615px; height: 400px; display: none; top: 35%; left: 45%;"><div class="k-window-titlebar k-header" style="margin-top: -33px;">&nbsp;<span class="k-window-title" id="permitStatusesWindow_wnd_title">Permit Status Definitions</span><div class="k-window-actions"><a role="button" href="https://permitsearch.mybuildingpermit.com/#" class="k-button k-bare k-button-icon k-window-action keychainify-checked" aria-label="Close"><span class="k-icon k-i-close"></span></a></div></div><div id="permitStatusesWindow" data-role="window" class="k-window-content k-content" tabindex="0" role="dialog" aria-labelledby="permitStatusesWindow_wnd_title"></div><div class="k-resize-handle k-resize-n"></div><div class="k-resize-handle k-resize-e"></div><div class="k-resize-handle k-resize-s"></div><div class="k-resize-handle k-resize-w"></div><div class="k-resize-handle k-resize-se"></div><div class="k-resize-handle k-resize-sw"></div><div class="k-resize-handle k-resize-ne"></div><div class="k-resize-handle k-resize-nw"></div></div><div class="k-animation-container" style="width: 280px; height: 206px; box-sizing: content-box; overflow: hidden; top: 248.594px; z-index: 10002; left: 575.5px; display: none; position: absolute;" aria-hidden="true"><div class="k-list-container k-popup k-group k-reset" id="ddlJurisdictions-list" data-role="popup" aria-hidden="true" style="position: absolute; font-size: 14px; font-family: &quot;Open Sans&quot;, &quot;Helvetica Neue&quot;, Helvetica, Arial, sans-serif; font-stretch: 100%; font-style: normal; font-weight: 400; line-height: normal; width: 274.4px; min-width: 274.4px; height: 200px; display: none; transform: translateY(-206px);"><div class="k-group-header" style="display:none"></div><div class="k-list-scroller" unselectable="on" style="height: 200px;"><ul unselectable="on" class="k-list k-reset" tabindex="-1" aria-hidden="true" id="ddlJurisdictions_listbox" aria-live="off" data-role="staticlist" role="listbox"><li tabindex="-1" role="option" unselectable="on" class="k-item" aria-selected="false" data-offset-index="0">--Select One--</li><li tabindex="-1" role="option" unselectable="on" class="k-item k-state-focused k-state-selected" aria-selected="true" data-offset-index="1" id="c840313a-4f02-413d-822b-ecb275c2c745">Auburn</li><li tabindex="-1" role="option" unselectable="on" class="k-item" aria-selected="false" data-offset-index="2">Bellevue</li><li tabindex="-1" role="option" unselectable="on" class="k-item" aria-selected="false" data-offset-index="3">Bothell</li><li tabindex="-1" role="option" unselectable="on" class="k-item" aria-selected="false" data-offset-index="4">Burien</li><li tabindex="-1" role="option" unselectable="on" class="k-item" aria-selected="false" data-offset-index="5">Edmonds</li><li tabindex="-1" role="option" unselectable="on" class="k-item" aria-selected="false" data-offset-index="6">Federal Way</li><li tabindex="-1" role="option" unselectable="on" class="k-item" aria-selected="false" data-offset-index="7">Issaquah</li><li tabindex="-1" role="option" unselectable="on" class="k-item" aria-selected="false" data-offset-index="8">Kenmore</li><li tabindex="-1" role="option" unselectable="on" class="k-item" aria-selected="false" data-offset-index="9">King County</li><li tabindex="-1" role="option" unselectable="on" class="k-item" aria-selected="false" data-offset-index="10">Kirkland</li><li tabindex="-1" role="option" unselectable="on" class="k-item" aria-selected="false" data-offset-index="11">Mercer Island</li><li tabindex="-1" role="option" unselectable="on" class="k-item" aria-selected="false" data-offset-index="12">Mill Creek</li><li tabindex="-1" role="option" unselectable="on" class="k-item" aria-selected="false" data-offset-index="13">Newcastle</li><li tabindex="-1" role="option" unselectable="on" class="k-item" aria-selected="false" data-offset-index="14">Sammamish</li><li tabindex="-1" role="option" unselectable="on" class="k-item" aria-selected="false" data-offset-index="15">Snoqualmie</li></ul></div><div class="k-nodata" style="display:none"><div>No data found.</div></div></div></div><div class="k-list-container k-popup k-group k-reset" id="ddlPermitTypes-list" data-role="popup" aria-hidden="true" style="display: none; position: absolute;"><div class="k-group-header" style="display:none"></div><div class="k-list-scroller" unselectable="on"><ul unselectable="on" class="k-list k-reset" tabindex="-1" aria-hidden="true" id="ddlPermitTypes_listbox" aria-live="polite" data-role="staticlist" role="listbox" aria-multiselectable="true"><li tabindex="-1" role="option" unselectable="on" class="k-item k-state-focused" aria-selected="false" data-offset-index="0" id="e0c100f3-0319-4e4f-aa60-cb8efd73fb5a">Addition</li><li tabindex="-1" role="option" unselectable="on" class="k-item" aria-selected="false" data-offset-index="1">Adult Family Home</li><li tabindex="-1" role="option" unselectable="on" class="k-item" aria-selected="false" data-offset-index="2">Alterations</li><li tabindex="-1" role="option" unselectable="on" class="k-item" aria-selected="false" data-offset-index="3">ackflow Premise</li><li tabindex="-1" role="option" unselectable="on" class="k-item" aria-selected="false" data-offset-index="4">Building</li><li tabindex="-1" role="option" unselectable="on" class="k-item" aria-selected="false" data-offset-index="5">Construction</li><li tabindex="-1" role="option" unselectable="on" class="k-item" aria-selected="false" data-offset-index="6">Demolition</li><li tabindex="-1" role="option" unselectable="on" class="k-item" aria-selected="false" data-offset-index="7">Fire</li><li tabindex="-1" role="option" unselectable="on" class="k-item" aria-selected="false" data-offset-index="8">Flood Plain</li><li tabindex="-1" role="option" unselectable="on" class="k-item" aria-selected="false" data-offset-index="9">Grading</li><li tabindex="-1" role="option" unselectable="on" class="k-item" aria-selected="false" data-offset-index="10">Hydrant</li><li tabindex="-1" role="option" unselectable="on" class="k-item" aria-selected="false" data-offset-index="11">Mechanical</li><li tabindex="-1" role="option" unselectable="on" class="k-item" aria-selected="false" data-offset-index="12">Plumbing</li><li tabindex="-1" role="option" unselectable="on" class="k-item" aria-selected="false" data-offset-index="13">Sewer</li><li tabindex="-1" role="option" unselectable="on" class="k-item" aria-selected="false" data-offset-index="14">Signs</li><li tabindex="-1" role="option" unselectable="on" class="k-item" aria-selected="false" data-offset-index="15">Stock</li><li tabindex="-1" role="option" unselectable="on" class="k-item" aria-selected="false" data-offset-index="16">Storm</li><li tabindex="-1" role="option" unselectable="on" class="k-item" aria-selected="false" data-offset-index="17">Tenant Improvement</li><li tabindex="-1" role="option" unselectable="on" class="k-item" aria-selected="false" data-offset-index="18">Water</li><li tabindex="-1" role="option" unselectable="on" class="k-item" aria-selected="false" data-offset-index="19">Administrative Use Permit</li><li tabindex="-1" role="option" unselectable="on" class="k-item" aria-selected="false" data-offset-index="20">Boundary Line Adjustment</li><li tabindex="-1" role="option" unselectable="on" class="k-item" aria-selected="false" data-offset-index="21">Comprehensive Plan Amendment</li><li tabindex="-1" role="option" unselectable="on" class="k-item" aria-selected="false" data-offset-index="22">Conditional Use</li><li tabindex="-1" role="option" unselectable="on" class="k-item" aria-selected="false" data-offset-index="23">Critical Areas</li><li tabindex="-1" role="option" unselectable="on" class="k-item" aria-selected="false" data-offset-index="24">Deviation</li><li tabindex="-1" role="option" unselectable="on" class="k-item" aria-selected="false" data-offset-index="25">Environmental Mitigation</li><li tabindex="-1" role="option" unselectable="on" class="k-item" aria-selected="false" data-offset-index="26">Public Facilities Extension</li><li tabindex="-1" role="option" unselectable="on" class="k-item" aria-selected="false" data-offset-index="27">Landscape Plan Revision</li><li tabindex="-1" role="option" unselectable="on" class="k-item" aria-selected="false" data-offset-index="28">Miscellaneous</li><li tabindex="-1" role="option" unselectable="on" class="k-item" aria-selected="false" data-offset-index="29">Plat</li><li tabindex="-1" role="option" unselectable="on" class="k-item" aria-selected="false" data-offset-index="30">Preapplication Meeting</li><li tabindex="-1" role="option" unselectable="on" class="k-item" aria-selected="false" data-offset-index="31">Rezone</li><li tabindex="-1" role="option" unselectable="on" class="k-item" aria-selected="false" data-offset-index="32">SEPA Determination</li><li tabindex="-1" role="option" unselectable="on" class="k-item" aria-selected="false" data-offset-index="33">Shorelines</li><li tabindex="-1" role="option" unselectable="on" class="k-item" aria-selected="false" data-offset-index="34">Short Plat</li><li tabindex="-1" role="option" unselectable="on" class="k-item" aria-selected="false" data-offset-index="35">Street Delay Request</li><li tabindex="-1" role="option" unselectable="on" class="k-item" aria-selected="false" data-offset-index="36">Temporary Use</li><li tabindex="-1" role="option" unselectable="on" class="k-item" aria-selected="false" data-offset-index="37">Utility Delay Request</li><li tabindex="-1" role="option" unselectable="on" class="k-item" aria-selected="false" data-offset-index="38">Variance</li><li tabindex="-1" role="option" unselectable="on" class="k-item" aria-selected="false" data-offset-index="39">Right-of-Way Vacation</li><li tabindex="-1" role="option" unselectable="on" class="k-item" aria-selected="false" data-offset-index="40">Zoning Certification Letter</li><li tabindex="-1" role="option" unselectable="on" class="k-item" aria-selected="false" data-offset-index="41">Zoning Code Text Amendment</li><li tabindex="-1" role="option" unselectable="on" class="k-item" aria-selected="false" data-offset-index="42">Payback</li><li tabindex="-1" role="option" unselectable="on" class="k-item" aria-selected="false" data-offset-index="43">Major Project</li></ul></div><div class="k-nodata" style="display: none;"><div>No data.</div></div></div><div class="k-list-container k-popup k-group k-reset" id="ddlPermitStatuses-list" data-role="popup" aria-hidden="true" style="display: none; position: absolute;"><div class="k-group-header" style="display:none"></div><div class="k-list-scroller" unselectable="on"><ul unselectable="on" class="k-list k-reset" tabindex="-1" aria-hidden="true" id="ddlPermitStatuses_listbox" aria-live="polite" data-role="staticlist" role="listbox" aria-multiselectable="true"><li tabindex="-1" role="option" unselectable="on" class="k-item k-state-focused" aria-selected="false" data-offset-index="0" id="eeb793ef-7ac4-456a-b0d8-a74961d6df3f">APPLIED</li><li tabindex="-1" role="option" unselectable="on" class="k-item" aria-selected="false" data-offset-index="1">APPROVED</li><li tabindex="-1" role="option" unselectable="on" class="k-item" aria-selected="false" data-offset-index="2">EXPIRED</li><li tabindex="-1" role="option" unselectable="on" class="k-item" aria-selected="false" data-offset-index="3">FINALED</li><li tabindex="-1" role="option" unselectable="on" class="k-item" aria-selected="false" data-offset-index="4">HOLD</li><li tabindex="-1" role="option" unselectable="on" class="k-item" aria-selected="false" data-offset-index="5">IN REVIEW</li><li tabindex="-1" role="option" unselectable="on" class="k-item" aria-selected="false" data-offset-index="6">ISSUED</li><li tabindex="-1" role="option" unselectable="on" class="k-item" aria-selected="false" data-offset-index="7">RETURNED TO APPLICANT</li><li tabindex="-1" role="option" unselectable="on" class="k-item" aria-selected="false" data-offset-index="8">REVIEW COMPLETE</li><li tabindex="-1" role="option" unselectable="on" class="k-item" aria-selected="false" data-offset-index="9">VOID</li><li tabindex="-1" role="option" unselectable="on" class="k-item" aria-selected="false" data-offset-index="10">WITHDRAWN</li></ul></div><div class="k-nodata" style="display: none;"><div>No data.</div></div></div><div class="k-animation-container" style="width: 229px; height: 86px; overflow: hidden; display: none; position: absolute; top: 409.6px; z-index: 10002; left: 477.562px;" aria-hidden="true"><div class="k-list-container k-popup k-group k-reset" id="ddlDateRanges-list" data-role="popup" aria-hidden="true" style="position: absolute; font-size: 14px; font-family: &quot;Open Sans&quot;, &quot;Helvetica Neue&quot;, Helvetica, Arial, sans-serif; font-stretch: 100%; font-style: normal; font-weight: 400; line-height: normal; width: 223.3px; min-width: 223.3px; height: auto; display: none; transform: translateY(-86px);"><div class="k-group-header" style="display:none"></div><div class="k-list-scroller" unselectable="on" style="height: auto;"><ul unselectable="on" class="k-list k-reset" tabindex="-1" aria-hidden="true" id="ddlDateRanges_listbox" aria-live="polite" data-role="staticlist" role="listbox" aria-multiselectable="true"><li tabindex="-1" role="option" unselectable="on" class="k-item k-state-focused k-state-selected" aria-selected="true" data-offset-index="0" id="2df15812-db8f-41ce-8f92-04eeda0ecb41">Applied</li><li tabindex="-1" role="option" unselectable="on" class="k-item" aria-selected="false" data-offset-index="1">Issued</li><li tabindex="-1" role="option" unselectable="on" class="k-item" aria-selected="false" data-offset-index="2">Finaled</li></ul></div><div class="k-nodata" style="display:none"><div>No data.</div></div></div></div><div class="k-animation-container" style="width: 244px; height: 275px; overflow: hidden; display: none; position: absolute; top: 460.6px; z-index: 10002; left: 477.562px;" aria-hidden="true"><div aria-hidden="true" class="k-calendar-container k-popup k-group k-reset" id="FromDate_dateview" data-role="popup" style="display: none; position: absolute; font-size: 14px; font-family: &quot;Open Sans&quot;, &quot;Helvetica Neue&quot;, Helvetica, Arial, sans-serif; font-stretch: 100%; font-style: normal; font-weight: 400; line-height: normal; transform: translateY(-275px);"><div id="12d92e94-9a65-4ef0-9f5a-74ccc3a324ee" data-role="calendar" class="k-widget k-calendar"><div class="k-header"><a href="https://permitsearch.mybuildingpermit.com/#" role="button" class="k-link k-nav-prev keychainify-checked" aria-label="Previous" aria-disabled="false"><span class="k-icon k-i-arrow-60-left"></span></a><a href="https://permitsearch.mybuildingpermit.com/#" role="button" aria-live="assertive" aria-atomic="true" class="k-link k-nav-fast keychainify-checked" aria-disabled="false">February 2026</a><a href="https://permitsearch.mybuildingpermit.com/#" role="button" class="k-link k-nav-next keychainify-checked" aria-label="Next" aria-disabled="false"><span class="k-icon k-i-arrow-60-right"></span></a></div><table tabindex="0" role="grid" class="k-content k-month" cellspacing="0" data-start="2026/1/1" aria-activedescendant="12d92e94-9a65-4ef0-9f5a-74ccc3a324ee_cell_selected"><thead><tr role="row"><th scope="col" title="Sunday">Su</th><th scope="col" title="Monday">Mo</th><th scope="col" title="Tuesday">Tu</th><th scope="col" title="Wednesday">We</th><th scope="col" title="Thursday">Th</th><th scope="col" title="Friday">Fr</th><th scope="col" title="Saturday">Sa</th></tr></thead><tbody><tr role="row"><td class="k-weekend" role="gridcell"><a tabindex="-1" class="k-link keychainify-checked" href="https://permitsearch.mybuildingpermit.com/#" data-value="2026/1/1" title="Sunday, February 01, 2026">1</a></td><td role="gridcell"><a tabindex="-1" class="k-link keychainify-checked" href="https://permitsearch.mybuildingpermit.com/#" data-value="2026/1/2" title="Monday, February 02, 2026">2</a></td><td role="gridcell"><a tabindex="-1" class="k-link keychainify-checked" href="https://permitsearch.mybuildingpermit.com/#" data-value="2026/1/3" title="Tuesday, February 03, 2026">3</a></td><td role="gridcell" class="k-state-selected k-state-focused" aria-selected="true" id="12d92e94-9a65-4ef0-9f5a-74ccc3a324ee_cell_selected" aria-label="Current focused date is Wednesday, February 04, 2026"><a tabindex="-1" class="k-link keychainify-checked" href="https://permitsearch.mybuildingpermit.com/#" data-value="2026/1/4" title="Wednesday, February 04, 2026">4</a></td><td role="gridcell"><a tabindex="-1" class="k-link keychainify-checked" href="https://permitsearch.mybuildingpermit.com/#" data-value="2026/1/5" title="Thursday, February 05, 2026">5</a></td><td role="gridcell"><a tabindex="-1" class="k-link keychainify-checked" href="https://permitsearch.mybuildingpermit.com/#" data-value="2026/1/6" title="Friday, February 06, 2026">6</a></td><td class="k-weekend" role="gridcell"><a tabindex="-1" class="k-link keychainify-checked" href="https://permitsearch.mybuildingpermit.com/#" data-value="2026/1/7" title="Saturday, February 07, 2026">7</a></td></tr><tr role="row"><td class="k-today k-weekend" role="gridcell"><a tabindex="-1" class="k-link keychainify-checked" href="https://permitsearch.mybuildingpermit.com/#" data-value="2026/1/8" title="Sunday, February 08, 2026">8</a></td><td role="gridcell"><a tabindex="-1" class="k-link keychainify-checked" href="https://permitsearch.mybuildingpermit.com/#" data-value="2026/1/9" title="Monday, February 09, 2026">9</a></td><td role="gridcell"><a tabindex="-1" class="k-link keychainify-checked" href="https://permitsearch.mybuildingpermit.com/#" data-value="2026/1/10" title="Tuesday, February 10, 2026">10</a></td><td role="gridcell"><a tabindex="-1" class="k-link keychainify-checked" href="https://permitsearch.mybuildingpermit.com/#" data-value="2026/1/11" title="Wednesday, February 11, 2026">11</a></td><td role="gridcell"><a tabindex="-1" class="k-link keychainify-checked" href="https://permitsearch.mybuildingpermit.com/#" data-value="2026/1/12" title="Thursday, February 12, 2026">12</a></td><td role="gridcell"><a tabindex="-1" class="k-link keychainify-checked" href="https://permitsearch.mybuildingpermit.com/#" data-value="2026/1/13" title="Friday, February 13, 2026">13</a></td><td class="k-weekend" role="gridcell"><a tabindex="-1" class="k-link keychainify-checked" href="https://permitsearch.mybuildingpermit.com/#" data-value="2026/1/14" title="Saturday, February 14, 2026">14</a></td></tr><tr role="row"><td class="k-weekend" role="gridcell"><a tabindex="-1" class="k-link keychainify-checked" href="https://permitsearch.mybuildingpermit.com/#" data-value="2026/1/15" title="Sunday, February 15, 2026">15</a></td><td role="gridcell"><a tabindex="-1" class="k-link keychainify-checked" href="https://permitsearch.mybuildingpermit.com/#" data-value="2026/1/16" title="Monday, February 16, 2026">16</a></td><td role="gridcell"><a tabindex="-1" class="k-link keychainify-checked" href="https://permitsearch.mybuildingpermit.com/#" data-value="2026/1/17" title="Tuesday, February 17, 2026">17</a></td><td role="gridcell"><a tabindex="-1" class="k-link keychainify-checked" href="https://permitsearch.mybuildingpermit.com/#" data-value="2026/1/18" title="Wednesday, February 18, 2026">18</a></td><td role="gridcell"><a tabindex="-1" class="k-link keychainify-checked" href="https://permitsearch.mybuildingpermit.com/#" data-value="2026/1/19" title="Thursday, February 19, 2026">19</a></td><td role="gridcell"><a tabindex="-1" class="k-link keychainify-checked" href="https://permitsearch.mybuildingpermit.com/#" data-value="2026/1/20" title="Friday, February 20, 2026">20</a></td><td class="k-weekend" role="gridcell"><a tabindex="-1" class="k-link keychainify-checked" href="https://permitsearch.mybuildingpermit.com/#" data-value="2026/1/21" title="Saturday, February 21, 2026">21</a></td></tr><tr role="row"><td class="k-weekend" role="gridcell"><a tabindex="-1" class="k-link keychainify-checked" href="https://permitsearch.mybuildingpermit.com/#" data-value="2026/1/22" title="Sunday, February 22, 2026">22</a></td><td role="gridcell"><a tabindex="-1" class="k-link keychainify-checked" href="https://permitsearch.mybuildingpermit.com/#" data-value="2026/1/23" title="Monday, February 23, 2026">23</a></td><td role="gridcell"><a tabindex="-1" class="k-link keychainify-checked" href="https://permitsearch.mybuildingpermit.com/#" data-value="2026/1/24" title="Tuesday, February 24, 2026">24</a></td><td role="gridcell"><a tabindex="-1" class="k-link keychainify-checked" href="https://permitsearch.mybuildingpermit.com/#" data-value="2026/1/25" title="Wednesday, February 25, 2026">25</a></td><td role="gridcell"><a tabindex="-1" class="k-link keychainify-checked" href="https://permitsearch.mybuildingpermit.com/#" data-value="2026/1/26" title="Thursday, February 26, 2026">26</a></td><td role="gridcell"><a tabindex="-1" class="k-link keychainify-checked" href="https://permitsearch.mybuildingpermit.com/#" data-value="2026/1/27" title="Friday, February 27, 2026">27</a></td><td class="k-weekend" role="gridcell"><a tabindex="-1" class="k-link keychainify-checked" href="https://permitsearch.mybuildingpermit.com/#" data-value="2026/1/28" title="Saturday, February 28, 2026">28</a></td></tr><tr role="row"><td class="k-weekend" role="gridcell"><a tabindex="-1" class="k-link keychainify-checked" href="https://permitsearch.mybuildingpermit.com/#" data-value="2026/2/1" title="Sunday, March 01, 2026">1</a></td><td class="k-other-month" role="gridcell"><a tabindex="-1" class="k-link keychainify-checked" href="https://permitsearch.mybuildingpermit.com/#" data-value="2026/2/2" title="Monday, March 02, 2026">2</a></td><td class="k-other-month" role="gridcell"><a tabindex="-1" class="k-link keychainify-checked" href="https://permitsearch.mybuildingpermit.com/#" data-value="2026/2/3" title="Tuesday, March 03, 2026">3</a></td><td class="k-other-month" role="gridcell"><a tabindex="-1" class="k-link keychainify-checked" href="https://permitsearch.mybuildingpermit.com/#" data-value="2026/2/4" title="Wednesday, March 04, 2026">4</a></td><td class="k-other-month" role="gridcell"><a tabindex="-1" class="k-link keychainify-checked" href="https://permitsearch.mybuildingpermit.com/#" data-value="2026/2/5" title="Thursday, March 05, 2026">5</a></td><td class="k-other-month" role="gridcell"><a tabindex="-1" class="k-link keychainify-checked" href="https://permitsearch.mybuildingpermit.com/#" data-value="2026/2/6" title="Friday, March 06, 2026">6</a></td><td class="k-other-month k-weekend" role="gridcell"><a tabindex="-1" class="k-link keychainify-checked" href="https://permitsearch.mybuildingpermit.com/#" data-value="2026/2/7" title="Saturday, March 07, 2026">7</a></td></tr><tr role="row"><td class="k-other-month k-weekend" role="gridcell"><a tabindex="-1" class="k-link keychainify-checked" href="https://permitsearch.mybuildingpermit.com/#" data-value="2026/2/8" title="Sunday, March 08, 2026">8</a></td><td class="k-other-month" role="gridcell"><a tabindex="-1" class="k-link keychainify-checked" href="https://permitsearch.mybuildingpermit.com/#" data-value="2026/2/9" title="Monday, March 09, 2026">9</a></td><td class="k-other-month" role="gridcell"><a tabindex="-1" class="k-link keychainify-checked" href="https://permitsearch.mybuildingpermit.com/#" data-value="2026/2/10" title="Tuesday, March 10, 2026">10</a></td><td class="k-other-month" role="gridcell"><a tabindex="-1" class="k-link keychainify-checked" href="https://permitsearch.mybuildingpermit.com/#" data-value="2026/2/11" title="Wednesday, March 11, 2026">11</a></td><td class="k-other-month" role="gridcell"><a tabindex="-1" class="k-link keychainify-checked" href="https://permitsearch.mybuildingpermit.com/#" data-value="2026/2/12" title="Thursday, March 12, 2026">12</a></td><td class="k-other-month" role="gridcell"><a tabindex="-1" class="k-link keychainify-checked" href="https://permitsearch.mybuildingpermit.com/#" data-value="2026/2/13" title="Friday, March 13, 2026">13</a></td><td class="k-other-month k-weekend" role="gridcell"><a tabindex="-1" class="k-link keychainify-checked" href="https://permitsearch.mybuildingpermit.com/#" data-value="2026/2/14" title="Saturday, March 14, 2026">14</a></td></tr></tbody></table><div class="k-footer"><a href="https://permitsearch.mybuildingpermit.com/#" class="k-link k-nav-today keychainify-checked" title="Sunday, February 08, 2026">Sunday, February 08, 2026</a></div></div></div></div><div class="k-animation-container" style="width: 244px; height: 275px; overflow: hidden; display: none; position: absolute; top: 513.6px; z-index: 10002; left: 477.562px;" aria-hidden="true"><div aria-hidden="true" class="k-calendar-container k-popup k-group k-reset" id="ToDate_dateview" data-role="popup" style="display: none; position: absolute; font-size: 14px; font-family: &quot;Open Sans&quot;, &quot;Helvetica Neue&quot;, Helvetica, Arial, sans-serif; font-stretch: 100%; font-style: normal; font-weight: 400; line-height: normal; transform: translateY(275px);"><div id="feedf95b-22d7-402f-83da-04a04cac10bf" data-role="calendar" class="k-widget k-calendar"><div class="k-header"><a href="https://permitsearch.mybuildingpermit.com/#" role="button" class="k-link k-nav-prev keychainify-checked" aria-label="Previous" aria-disabled="false"><span class="k-icon k-i-arrow-60-left"></span></a><a href="https://permitsearch.mybuildingpermit.com/#" role="button" aria-live="assertive" aria-atomic="true" class="k-link k-nav-fast keychainify-checked" aria-disabled="false">February 2026</a><a href="https://permitsearch.mybuildingpermit.com/#" role="button" class="k-link k-nav-next keychainify-checked" aria-label="Next" aria-disabled="false"><span class="k-icon k-i-arrow-60-right"></span></a></div><table tabindex="0" role="grid" class="k-content k-month" cellspacing="0" data-start="2026/1/1" aria-activedescendant="feedf95b-22d7-402f-83da-04a04cac10bf_cell_selected"><thead><tr role="row"><th scope="col" title="Sunday">Su</th><th scope="col" title="Monday">Mo</th><th scope="col" title="Tuesday">Tu</th><th scope="col" title="Wednesday">We</th><th scope="col" title="Thursday">Th</th><th scope="col" title="Friday">Fr</th><th scope="col" title="Saturday">Sa</th></tr></thead><tbody><tr role="row"><td class="k-weekend" role="gridcell"><a tabindex="-1" class="k-link keychainify-checked" href="https://permitsearch.mybuildingpermit.com/#" data-value="2026/1/1" title="Sunday, February 01, 2026">1</a></td><td role="gridcell"><a tabindex="-1" class="k-link keychainify-checked" href="https://permitsearch.mybuildingpermit.com/#" data-value="2026/1/2" title="Monday, February 02, 2026">2</a></td><td role="gridcell"><a tabindex="-1" class="k-link keychainify-checked" href="https://permitsearch.mybuildingpermit.com/#" data-value="2026/1/3" title="Tuesday, February 03, 2026">3</a></td><td role="gridcell"><a tabindex="-1" class="k-link keychainify-checked" href="https://permitsearch.mybuildingpermit.com/#" data-value="2026/1/4" title="Wednesday, February 04, 2026">4</a></td><td role="gridcell"><a tabindex="-1" class="k-link keychainify-checked" href="https://permitsearch.mybuildingpermit.com/#" data-value="2026/1/5" title="Thursday, February 05, 2026">5</a></td><td role="gridcell"><a tabindex="-1" class="k-link keychainify-checked" href="https://permitsearch.mybuildingpermit.com/#" data-value="2026/1/6" title="Friday, February 06, 2026">6</a></td><td class="k-weekend" role="gridcell"><a tabindex="-1" class="k-link keychainify-checked" href="https://permitsearch.mybuildingpermit.com/#" data-value="2026/1/7" title="Saturday, February 07, 2026">7</a></td></tr><tr role="row"><td class="k-today k-weekend k-state-selected k-state-focused" role="gridcell" aria-selected="true" id="feedf95b-22d7-402f-83da-04a04cac10bf_cell_selected" aria-label="Current focused date is Sunday, February 08, 2026"><a tabindex="-1" class="k-link keychainify-checked" href="https://permitsearch.mybuildingpermit.com/#" data-value="2026/1/8" title="Sunday, February 08, 2026">8</a></td><td role="gridcell"><a tabindex="-1" class="k-link keychainify-checked" href="https://permitsearch.mybuildingpermit.com/#" data-value="2026/1/9" title="Monday, February 09, 2026">9</a></td><td role="gridcell"><a tabindex="-1" class="k-link keychainify-checked" href="https://permitsearch.mybuildingpermit.com/#" data-value="2026/1/10" title="Tuesday, February 10, 2026">10</a></td><td role="gridcell"><a tabindex="-1" class="k-link keychainify-checked" href="https://permitsearch.mybuildingpermit.com/#" data-value="2026/1/11" title="Wednesday, February 11, 2026">11</a></td><td role="gridcell"><a tabindex="-1" class="k-link keychainify-checked" href="https://permitsearch.mybuildingpermit.com/#" data-value="2026/1/12" title="Thursday, February 12, 2026">12</a></td><td role="gridcell"><a tabindex="-1" class="k-link keychainify-checked" href="https://permitsearch.mybuildingpermit.com/#" data-value="2026/1/13" title="Friday, February 13, 2026">13</a></td><td class="k-weekend" role="gridcell"><a tabindex="-1" class="k-link keychainify-checked" href="https://permitsearch.mybuildingpermit.com/#" data-value="2026/1/14" title="Saturday, February 14, 2026">14</a></td></tr><tr role="row"><td class="k-weekend" role="gridcell"><a tabindex="-1" class="k-link keychainify-checked" href="https://permitsearch.mybuildingpermit.com/#" data-value="2026/1/15" title="Sunday, February 15, 2026">15</a></td><td role="gridcell"><a tabindex="-1" class="k-link keychainify-checked" href="https://permitsearch.mybuildingpermit.com/#" data-value="2026/1/16" title="Monday, February 16, 2026">16</a></td><td role="gridcell"><a tabindex="-1" class="k-link keychainify-checked" href="https://permitsearch.mybuildingpermit.com/#" data-value="2026/1/17" title="Tuesday, February 17, 2026">17</a></td><td role="gridcell"><a tabindex="-1" class="k-link keychainify-checked" href="https://permitsearch.mybuildingpermit.com/#" data-value="2026/1/18" title="Wednesday, February 18, 2026">18</a></td><td role="gridcell"><a tabindex="-1" class="k-link keychainify-checked" href="https://permitsearch.mybuildingpermit.com/#" data-value="2026/1/19" title="Thursday, February 19, 2026">19</a></td><td role="gridcell"><a tabindex="-1" class="k-link keychainify-checked" href="https://permitsearch.mybuildingpermit.com/#" data-value="2026/1/20" title="Friday, February 20, 2026">20</a></td><td class="k-weekend" role="gridcell"><a tabindex="-1" class="k-link keychainify-checked" href="https://permitsearch.mybuildingpermit.com/#" data-value="2026/1/21" title="Saturday, February 21, 2026">21</a></td></tr><tr role="row"><td class="k-weekend" role="gridcell"><a tabindex="-1" class="k-link keychainify-checked" href="https://permitsearch.mybuildingpermit.com/#" data-value="2026/1/22" title="Sunday, February 22, 2026">22</a></td><td role="gridcell"><a tabindex="-1" class="k-link keychainify-checked" href="https://permitsearch.mybuildingpermit.com/#" data-value="2026/1/23" title="Monday, February 23, 2026">23</a></td><td role="gridcell"><a tabindex="-1" class="k-link keychainify-checked" href="https://permitsearch.mybuildingpermit.com/#" data-value="2026/1/24" title="Tuesday, February 24, 2026">24</a></td><td role="gridcell"><a tabindex="-1" class="k-link keychainify-checked" href="https://permitsearch.mybuildingpermit.com/#" data-value="2026/1/25" title="Wednesday, February 25, 2026">25</a></td><td role="gridcell"><a tabindex="-1" class="k-link keychainify-checked" href="https://permitsearch.mybuildingpermit.com/#" data-value="2026/1/26" title="Thursday, February 26, 2026">26</a></td><td role="gridcell"><a tabindex="-1" class="k-link keychainify-checked" href="https://permitsearch.mybuildingpermit.com/#" data-value="2026/1/27" title="Friday, February 27, 2026">27</a></td><td class="k-weekend" role="gridcell"><a tabindex="-1" class="k-link keychainify-checked" href="https://permitsearch.mybuildingpermit.com/#" data-value="2026/1/28" title="Saturday, February 28, 2026">28</a></td></tr><tr role="row"><td class="k-weekend" role="gridcell"><a tabindex="-1" class="k-link keychainify-checked" href="https://permitsearch.mybuildingpermit.com/#" data-value="2026/2/1" title="Sunday, March 01, 2026">1</a></td><td class="k-other-month" role="gridcell"><a tabindex="-1" class="k-link keychainify-checked" href="https://permitsearch.mybuildingpermit.com/#" data-value="2026/2/2" title="Monday, March 02, 2026">2</a></td><td class="k-other-month" role="gridcell"><a tabindex="-1" class="k-link keychainify-checked" href="https://permitsearch.mybuildingpermit.com/#" data-value="2026/2/3" title="Tuesday, March 03, 2026">3</a></td><td class="k-other-month" role="gridcell"><a tabindex="-1" class="k-link keychainify-checked" href="https://permitsearch.mybuildingpermit.com/#" data-value="2026/2/4" title="Wednesday, March 04, 2026">4</a></td><td class="k-other-month" role="gridcell"><a tabindex="-1" class="k-link keychainify-checked" href="https://permitsearch.mybuildingpermit.com/#" data-value="2026/2/5" title="Thursday, March 05, 2026">5</a></td><td class="k-other-month" role="gridcell"><a tabindex="-1" class="k-link keychainify-checked" href="https://permitsearch.mybuildingpermit.com/#" data-value="2026/2/6" title="Friday, March 06, 2026">6</a></td><td class="k-other-month k-weekend" role="gridcell"><a tabindex="-1" class="k-link keychainify-checked" href="https://permitsearch.mybuildingpermit.com/#" data-value="2026/2/7" title="Saturday, March 07, 2026">7</a></td></tr><tr role="row"><td class="k-other-month k-weekend" role="gridcell"><a tabindex="-1" class="k-link keychainify-checked" href="https://permitsearch.mybuildingpermit.com/#" data-value="2026/2/8" title="Sunday, March 08, 2026">8</a></td><td class="k-other-month" role="gridcell"><a tabindex="-1" class="k-link keychainify-checked" href="https://permitsearch.mybuildingpermit.com/#" data-value="2026/2/9" title="Monday, March 09, 2026">9</a></td><td class="k-other-month" role="gridcell"><a tabindex="-1" class="k-link keychainify-checked" href="https://permitsearch.mybuildingpermit.com/#" data-value="2026/2/10" title="Tuesday, March 10, 2026">10</a></td><td class="k-other-month" role="gridcell"><a tabindex="-1" class="k-link keychainify-checked" href="https://permitsearch.mybuildingpermit.com/#" data-value="2026/2/11" title="Wednesday, March 11, 2026">11</a></td><td class="k-other-month" role="gridcell"><a tabindex="-1" class="k-link keychainify-checked" href="https://permitsearch.mybuildingpermit.com/#" data-value="2026/2/12" title="Thursday, March 12, 2026">12</a></td><td class="k-other-month" role="gridcell"><a tabindex="-1" class="k-link keychainify-checked" href="https://permitsearch.mybuildingpermit.com/#" data-value="2026/2/13" title="Friday, March 13, 2026">13</a></td><td class="k-other-month k-weekend" role="gridcell"><a tabindex="-1" class="k-link keychainify-checked" href="https://permitsearch.mybuildingpermit.com/#" data-value="2026/2/14" title="Saturday, March 14, 2026">14</a></td></tr></tbody></table><div class="k-footer"><a href="https://permitsearch.mybuildingpermit.com/#" class="k-link k-nav-today keychainify-checked" title="Sunday, February 08, 2026">Sunday, February 08, 2026</a></div></div></div></div><div class="k-animation-container" style="width: 31px; height: 10px; overflow: hidden; top: 969.225px; z-index: 10002; left: 1464.06px; box-sizing: content-box; display: none; position: absolute;" aria-hidden="true"><div role="tooltip" class="k-widget k-tooltip k-popup k-group k-reset" data-role="popup" style="display: none; position: absolute; opacity: 0;" aria-hidden="true"><div class="k-tooltip-content"></div><div class="k-callout k-callout-undefined" style="left: 31px;"></div></div></div></body></html>

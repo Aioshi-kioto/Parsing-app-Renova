@@ -19,6 +19,22 @@ from models import (
 router = APIRouter()
 
 
+def _parse_price(val):
+    """Парсит цену из int/float/str (в т.ч. '$999,880') в float"""
+    if val is None:
+        return None
+    if isinstance(val, (int, float)):
+        return float(val)
+    if isinstance(val, str):
+        cleaned = val.replace('$', '').replace(',', '').replace(' ', '').strip()
+        if cleaned:
+            try:
+                return float(cleaned)
+            except ValueError:
+                pass
+    return None
+
+
 @router.get("/overview", response_model=OverviewStats)
 async def get_overview():
     """Общая статистика для Dashboard"""
@@ -48,7 +64,9 @@ async def zillow_price_distribution(
     """)
     min_price, max_price = cursor.fetchone()
     
-    if not min_price or not max_price:
+    min_price = _parse_price(min_price)
+    max_price = _parse_price(max_price)
+    if min_price is None or max_price is None:
         conn.close()
         return []
     
@@ -56,13 +74,16 @@ async def zillow_price_distribution(
     bin_size = (max_price - min_price) / bins
     result = []
     
+    # Выражение для приведения price к числу (на случай TEXT со значением '$999,880')
+    price_expr = "CAST(REPLACE(REPLACE(REPLACE(COALESCE(CAST(price AS TEXT), ''), '$', ''), ',', ''), ' ', '') AS REAL)"
+    
     for i in range(bins):
         low = min_price + (i * bin_size)
         high = min_price + ((i + 1) * bin_size)
         
         cursor.execute(f"""
             SELECT COUNT(*) FROM zillow_homes 
-            WHERE price >= ? AND price < ? {job_filter}
+            WHERE price IS NOT NULL AND {price_expr} >= ? AND {price_expr} < ? {job_filter}
         """, (low, high))
         count = cursor.fetchone()[0]
         

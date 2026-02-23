@@ -8,7 +8,7 @@
       <button
         @click="startParsing"
         :disabled="!canStart"
-        class="w-full py-3 px-6 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors"
+        class="w-full py-3 px-6 bg-gray-900 text-white rounded-md font-semibold hover:bg-black disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors"
       >
         {{ currentJobId ? 'Парсинг запущен...' : 'Запустить парсинг' }}
       </button>

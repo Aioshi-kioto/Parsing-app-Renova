@@ -39,7 +39,7 @@
               <a
                 v-if="job.status === 'completed'"
                 :href="getExportUrl(job.id)"
-                class="text-blue-600 hover:text-blue-800 mr-3"
+                class="text-gray-900 hover:text-black mr-3"
               >
                 Экспорт CSV
               </a>
@@ -88,7 +88,7 @@ function getStatusColor(status) {
   const map = {
     pending: 'bg-gray-100 text-gray-800',
     waiting_captcha: 'bg-yellow-100 text-yellow-800',
-    parsing: 'bg-blue-100 text-blue-800',
+    parsing: 'bg-gray-100 text-gray-800',
     completed: 'bg-green-100 text-green-800',
     failed: 'bg-red-100 text-red-800'
   }

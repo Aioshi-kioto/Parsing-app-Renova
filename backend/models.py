@@ -32,6 +32,7 @@ class VerificationStatus(str, Enum):
 class ZillowParseRequest(BaseModel):
     """Запрос на парсинг Zillow"""
     urls: List[str] = Field(..., min_length=1, description="Список URL для парсинга")
+    headless: bool = Field(default=False, description="Скрыть браузер (headless mode)")
 
 
 class ZillowJobStatus(BaseModel):
@@ -68,14 +69,21 @@ class ZillowHome(BaseModel):
     state: Optional[str] = None
     zipcode: Optional[str] = None
     price: Optional[float] = None
+    price_formatted: Optional[str] = None
     beds: Optional[int] = None
     baths: Optional[float] = None
     area_sqft: Optional[int] = None
-    lot_size: Optional[int] = None
+    lot_size: Optional[float] = None
     year_built: Optional[int] = None
     home_type: Optional[str] = None
     latitude: Optional[float] = None
     longitude: Optional[float] = None
+    date_sold: Optional[str] = None
+    sold_date_text: Optional[str] = None
+    zestimate: Optional[float] = None
+    tax_assessed_value: Optional[float] = None
+    has_image: Optional[bool] = None
+    detail_url: Optional[str] = None
     created_at: datetime
 
 
@@ -105,13 +113,10 @@ class PermitParseRequest(BaseModel):
     """Запрос на парсинг пермитов"""
     year: int = Field(default=2026, ge=2000, le=2030)
     month: Optional[int] = Field(default=None, ge=1, le=12, description="Месяц (1-12), если не задан — весь год")
-    period: Optional[str] = Field(
-        default=None,
-        description="Период: last_month, last_3_months или year. Имеет приоритет над month"
-    )
     permit_class: Optional[str] = Field(default="Single Family / Duplex")
     min_cost: float = Field(default=5000, ge=0)
     verify_owner_builder: bool = Field(default=True, description="Верифицировать owner-builder через портал")
+    headless: bool = Field(default=False, description="Скрыть браузер (headless mode)")
 
 
 class PermitJobStatus(BaseModel):
@@ -135,6 +140,7 @@ class PermitJobListItem(BaseModel):
     status: str
     year: int
     permits_found: int
+    permits_verified: int = 0
     owner_builders_found: int
     error_message: Optional[str] = None
     started_at: datetime
@@ -189,6 +195,103 @@ class PermitStats(BaseModel):
 
 
 # ===============================
+# MYBUILDINGPERMIT МОДЕЛИ
+# ===============================
+
+# Список доступных юрисдикций (только из TARGET_CONFIG в spec.md)
+MBP_JURISDICTIONS = [
+    "Auburn", "Bellevue", "Bothell", "Burien", "Edmonds", "Kenmore",
+    "King County", "Kirkland", "Mercer Island", "Mill Creek", "Newcastle",
+    "Sammamish", "Snoqualmie",
+]
+
+
+class MBPParseRequest(BaseModel):
+    """Запрос на парсинг MyBuildingPermit"""
+    jurisdictions: List[str] = Field(
+        default=["Auburn", "Bellevue", "Kirkland", "Sammamish"],
+        description="Список городов для парсинга"
+    )
+    days_back: int = Field(default=7, ge=1, le=30, description="Начальный период (адаптивно 7→6→5... при ошибке)")
+    limit_per_city: Optional[int] = Field(default=None, ge=1, le=1000, description="Лимит записей на город (None = без лимита)")
+    headless: bool = Field(default=False, description="Скрыть браузер (headless mode)")
+
+
+class MBPJobStatus(BaseModel):
+    """Статус задачи парсинга MyBuildingPermit"""
+    id: int
+    status: str
+    jurisdictions: Optional[str] = None
+    days_back: int = 7
+    date_from_str: Optional[str] = None
+    date_to_str: Optional[str] = None
+    total_permits: int = 0
+    analyzed_count: int = 0
+    owner_builders_found: int = 0
+    elapsed_seconds: Optional[float] = None
+    current_jurisdiction: Optional[str] = None
+    error_message: Optional[str] = None
+    started_at: datetime
+    completed_at: Optional[datetime] = None
+
+
+class MBPJobListItem(BaseModel):
+    """Элемент списка задач MyBuildingPermit"""
+    id: int
+    status: str
+    jurisdictions: Optional[str] = None
+    current_jurisdiction: Optional[str] = None
+    total_permits: int = 0
+    analyzed_count: int = 0
+    owner_builders_found: int = 0
+    elapsed_seconds: Optional[float] = None
+    date_from_str: Optional[str] = None
+    date_to_str: Optional[str] = None
+    error_message: Optional[str] = None
+    started_at: datetime
+    completed_at: Optional[datetime] = None
+
+
+class MBPPermit(BaseModel):
+    """Пермит из MyBuildingPermit"""
+    id: int
+    job_id: Optional[int] = None
+    permit_number: str
+    jurisdiction: Optional[str] = None
+    project_name: Optional[str] = None
+    description: Optional[str] = None
+    permit_type: Optional[str] = None
+    permit_status: Optional[str] = None
+    address: Optional[str] = None
+    parcel: Optional[str] = None
+    applied_date: Optional[str] = None
+    issued_date: Optional[str] = None
+    applicant_name: Optional[str] = None
+    contractor_name: Optional[str] = None
+    contractor_license: Optional[str] = None
+    is_owner_builder: bool = False
+    matches_target_type: Optional[bool] = None
+    permit_url: Optional[str] = None
+    created_at: datetime
+
+
+class MBPPermitsResponse(BaseModel):
+    """Ответ со списком пермитов MyBuildingPermit"""
+    permits: List[MBPPermit]
+    total: int
+
+
+class MBPStats(BaseModel):
+    """Статистика MyBuildingPermit"""
+    total: int  # всего проанализировано (без фильтра по типам)
+    matching_types: int  # подходят под TARGET_CONFIG.permit_types
+    owner_builders_from_matching: int  # owner=true среди matching_types
+    owner_builders: int  # всего owner-builders (для обратной совместимости)
+    by_jurisdiction: dict
+    by_type: Optional[dict] = None  # permit_type -> count для проверки парсинга
+
+
+# ===============================
 # ANALYTICS МОДЕЛИ
 # ===============================
 
@@ -196,6 +299,7 @@ class OverviewStats(BaseModel):
     """Общая статистика для Dashboard"""
     zillow: dict
     permits: dict
+    mbp: Optional[dict] = None
     recent_jobs: List[dict]
 
 

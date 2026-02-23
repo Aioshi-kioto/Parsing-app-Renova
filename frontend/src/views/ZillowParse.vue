@@ -1,11 +1,25 @@
 <template>
-  <div class="space-y-6">
+  <div class="space-y-6 relative">
+    <!-- Loading overlay при старте парсинга -->
+    <div 
+      v-if="startingParse"
+      class="fixed inset-0 bg-black/30 backdrop-blur-sm z-50 flex items-center justify-center"
+    >
+      <div class="bg-white rounded-xl shadow-xl p-8 flex flex-col items-center gap-4">
+        <svg class="w-12 h-12 text-blue-600 animate-spin" fill="none" viewBox="0 0 24 24">
+          <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+          <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+        </svg>
+        <p class="text-gray-700 font-medium">Starting Zillow parse...</p>
+        <p class="text-sm text-gray-500">Preparing to fetch {{ validUrls.length }} URL(s)</p>
+      </div>
+    </div>
     <!-- Input Section -->
     <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
       <h2 class="text-lg font-semibold text-gray-900 mb-4">Parse Zillow URLs</h2>
       
       <!-- Instructions -->
-      <div class="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-4">
+      <div class="bg-gray-50 border border-gray-200 rounded-lg p-4 mb-4">
         <div class="flex gap-3">
           <svg class="w-5 h-5 text-blue-600 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
@@ -31,21 +45,34 @@
 
 Example:
 https://www.zillow.com/seattle-wa/sold/?searchQueryState=..."
-        class="w-full h-40 px-4 py-3 border border-gray-300 rounded-lg text-sm font-mono resize-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+        class="w-full h-40 px-4 py-3 border border-gray-300 rounded-lg text-sm font-mono resize-none focus:ring-2 focus:ring-1 focus:ring-gray-900 focus:border-gray-900"
       ></textarea>
 
       <div class="flex items-center justify-between mt-4">
-        <div class="text-sm text-gray-500">
-          <span v-if="validUrls.length > 0" class="text-green-600 font-medium">
-            {{ validUrls.length }} valid URL{{ validUrls.length > 1 ? 's' : '' }} detected
-          </span>
-          <span v-else>Enter Zillow URLs to start parsing</span>
+        <div class="flex items-center gap-6">
+          <div class="text-sm text-gray-500">
+            <span v-if="validUrls.length > 0" class="text-green-600 font-medium">
+              {{ validUrls.length }} valid URL{{ validUrls.length > 1 ? 's' : '' }} detected
+            </span>
+            <span v-else>Enter Zillow URLs to start parsing</span>
+          </div>
+          <label class="relative inline-flex items-center cursor-pointer flex-shrink-0">
+            <input 
+              type="checkbox" 
+              v-model="headless"
+              class="sr-only peer"
+            />
+            <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-gray-400 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-gray-900"></div>
+            <span class="ml-2 text-sm text-gray-600 whitespace-nowrap">
+              {{ headless ? 'Headless' : 'Browser visible' }}
+            </span>
+          </label>
         </div>
         
         <button
           @click="startParsing"
           :disabled="!canStart"
-          class="px-6 py-2.5 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors flex items-center gap-2"
+          class="px-6 py-2.5 bg-gray-900 text-white rounded-md font-medium hover:bg-black disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors flex items-center gap-2"
         >
           <svg v-if="currentJobId" class="w-5 h-5 animate-spin" fill="none" viewBox="0 0 24 24">
             <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
@@ -61,7 +88,7 @@ https://www.zillow.com/seattle-wa/sold/?searchQueryState=..."
       <h2 class="text-lg font-semibold text-gray-900 mb-4">Current Parse Status</h2>
       
       <div class="space-y-4">
-        <div class="flex items-center gap-4">
+        <div class="flex items-center gap-4 flex-wrap">
           <span 
             class="px-3 py-1 text-sm font-medium rounded-full"
             :class="getStatusClass(currentStatus.status)"
@@ -70,6 +97,9 @@ https://www.zillow.com/seattle-wa/sold/?searchQueryState=..."
           </span>
           <span class="text-sm text-gray-500">
             Job #{{ currentStatus.id }}
+          </span>
+          <span v-if="formatDuration(currentStatus.started_at, currentStatus.completed_at)" class="text-sm text-blue-600 font-medium">
+            ⏱ {{ formatDuration(currentStatus.started_at, currentStatus.completed_at) }}
           </span>
         </div>
 
@@ -113,14 +143,23 @@ https://www.zillow.com/seattle-wa/sold/?searchQueryState=..."
         <h2 class="text-lg font-semibold text-gray-900">Parse History</h2>
         <button 
           @click="loadJobs"
-          class="text-sm text-blue-600 hover:text-blue-700"
+          class="text-sm text-gray-900 hover:text-black"
         >
           Refresh
         </button>
       </div>
 
-      <div v-if="loadingJobs" class="py-8 text-center text-gray-500">
-        Loading...
+      <div v-if="loadingJobs" class="overflow-x-auto">
+        <div class="animate-pulse space-y-3 py-4">
+          <div v-for="i in 5" :key="i" class="flex gap-4">
+            <div class="h-8 bg-gray-200 rounded w-12"></div>
+            <div class="h-8 bg-gray-200 rounded w-20"></div>
+            <div class="h-8 bg-gray-200 rounded w-12"></div>
+            <div class="h-8 bg-gray-200 rounded w-12"></div>
+            <div class="h-8 bg-gray-200 rounded w-16"></div>
+            <div class="h-8 bg-gray-200 rounded w-24"></div>
+          </div>
+        </div>
       </div>
       <div v-else-if="jobs.length === 0" class="py-8 text-center text-gray-500">
         No parse jobs yet. Start your first parse above.
@@ -133,6 +172,7 @@ https://www.zillow.com/seattle-wa/sold/?searchQueryState=..."
               <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
               <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">URLs</th>
               <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Homes</th>
+              <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Duration</th>
               <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Date</th>
               <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Actions</th>
             </tr>
@@ -153,14 +193,32 @@ https://www.zillow.com/seattle-wa/sold/?searchQueryState=..."
                 {{ job.unique_homes }} / {{ job.homes_found }}
               </td>
               <td class="px-4 py-3 text-sm text-gray-500">{{ formatDate(job.started_at) }}</td>
-              <td class="px-4 py-3">
+              <td class="px-4 py-3 space-x-2">
+                <!-- Stop button for active jobs -->
+                <button
+                  v-if="isParsingActive(job.status)"
+                  @click="cancelJob(job.id)"
+                  :disabled="cancellingJob === job.id"
+                  class="text-amber-600 hover:text-amber-800 text-sm font-medium disabled:opacity-50"
+                >
+                  {{ cancellingJob === job.id ? 'Stopping...' : '⏹ Stop' }}
+                </button>
                 <a
                   v-if="job.unique_homes > 0"
                   :href="getExportUrl(job.id)"
-                  class="text-blue-600 hover:text-blue-700 text-sm font-medium"
+                  class="text-gray-900 hover:text-black text-sm font-medium"
                 >
                   Export CSV
                 </a>
+                <!-- Delete button -->
+                <button
+                  @click="deleteJob(job.id)"
+                  :disabled="deletingJob === job.id"
+                  class="text-red-500 hover:text-red-700 text-sm disabled:opacity-50 ml-2"
+                  :title="'Delete job #' + job.id"
+                >
+                  {{ deletingJob === job.id ? '...' : '🗑' }}
+                </button>
               </td>
             </tr>
           </tbody>
@@ -172,7 +230,7 @@ https://www.zillow.com/seattle-wa/sold/?searchQueryState=..."
 
 <script setup>
 import { ref, computed, onMounted, onUnmounted } from 'vue'
-import { startZillowParse, getZillowStatus, getZillowJobs, getZillowExportUrl } from '../api'
+import { startZillowParse, getZillowStatus, getZillowJobs, getZillowExportUrl, cancelZillowJob, deleteZillowJob } from '../api'
 
 const urlsText = ref('')
 const validUrls = ref([])
@@ -180,6 +238,10 @@ const currentJobId = ref(null)
 const currentStatus = ref(null)
 const jobs = ref([])
 const loadingJobs = ref(false)
+const startingParse = ref(false)
+const cancellingJob = ref(null)
+const deletingJob = ref(null)
+const headless = ref(false)
 let statusInterval = null
 
 const canStart = computed(() => {
@@ -197,7 +259,7 @@ async function startParsing() {
   if (!canStart.value) return
   
   try {
-    const result = await startZillowParse(validUrls.value)
+    const result = await startZillowParse(validUrls.value, headless.value)
     currentJobId.value = result.job_id
     await pollStatus()
     await loadJobs()
@@ -213,7 +275,7 @@ async function pollStatus() {
     const status = await getZillowStatus(currentJobId.value)
     currentStatus.value = status
     
-    if (status.status === 'completed' || status.status === 'failed') {
+    if (status.status === 'completed' || status.status === 'failed' || status.status === 'cancelled') {
       if (statusInterval) {
         clearInterval(statusInterval)
         statusInterval = null
@@ -255,17 +317,73 @@ function formatDate(dateStr) {
 function getStatusClass(status) {
   const classes = {
     completed: 'bg-green-100 text-green-700',
-    running: 'bg-blue-100 text-blue-700',
+    running: 'bg-gray-100 text-gray-700',
     pending: 'bg-gray-100 text-gray-700',
     failed: 'bg-red-100 text-red-700',
+    cancelled: 'bg-amber-100 text-amber-700',
     parsing: 'bg-blue-100 text-blue-700',
     waiting_captcha: 'bg-amber-100 text-amber-700',
   }
   return classes[status] || 'bg-gray-100 text-gray-700'
 }
 
+function isParsingActive(status) {
+  return ['running', 'pending', 'parsing', 'waiting_captcha'].includes(status)
+}
+
+async function cancelJob(jobId) {
+  cancellingJob.value = jobId
+  try {
+    await cancelZillowJob(jobId)
+    await loadJobs()
+    if (currentJobId.value === jobId) {
+      currentJobId.value = null
+      if (statusInterval) {
+        clearInterval(statusInterval)
+        statusInterval = null
+      }
+    }
+  } catch (error) {
+    console.error('Error cancelling job:', error)
+    alert('Error cancelling job: ' + error.message)
+  } finally {
+    cancellingJob.value = null
+  }
+}
+
+async function deleteJob(jobId) {
+  if (!confirm(`Delete job #${jobId} and all associated homes?`)) return
+  deletingJob.value = jobId
+  try {
+    await deleteZillowJob(jobId)
+    await loadJobs()
+  } catch (error) {
+    console.error('Error deleting job:', error)
+    alert('Error deleting job: ' + error.message)
+  } finally {
+    deletingJob.value = null
+  }
+}
+
+function formatDuration(startedStr, completedStr) {
+  if (!startedStr || !completedStr) return ''
+  const start = new Date(startedStr)
+  const end = new Date(completedStr)
+  const sec = Math.round((end - start) / 1000)
+  if (sec < 60) return `${sec}s`
+  const min = Math.floor(sec / 60)
+  const s = sec % 60
+  return s > 0 ? `${min}m ${s}s` : `${min}m`
+}
+
 onMounted(async () => {
   await loadJobs()
+  // Восстанавливаем отслеживание активного job при возврате на страницу
+  const activeJob = jobs.value.find(j => isParsingActive(j.status))
+  if (activeJob) {
+    currentJobId.value = activeJob.id
+    await pollStatus()
+  }
   statusInterval = setInterval(() => {
     if (currentJobId.value) pollStatus()
   }, 2000)

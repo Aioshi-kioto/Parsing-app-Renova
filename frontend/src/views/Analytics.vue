@@ -8,15 +8,32 @@
         @click="activeTab = tab.id"
         class="px-4 py-2 rounded-lg text-sm font-medium transition-colors"
         :class="activeTab === tab.id 
-          ? 'bg-blue-100 text-blue-700' 
+          ? 'bg-gray-100 text-gray-900' 
           : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'"
       >
         {{ tab.name }}
       </button>
     </div>
 
-    <!-- KPI Cards -->
-    <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+    <!-- KPI Cards: для MBP — Total / Matching / Owner-builders; для остальных — стандартные -->
+    <div v-if="activeTab === 'mbp'" class="grid grid-cols-2 md:grid-cols-3 gap-4">
+      <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-4">
+        <p class="text-sm text-gray-500">Total Analyzed</p>
+        <p class="text-2xl font-bold text-gray-900">{{ stats.total || 0 }}</p>
+        <p class="text-xs text-gray-400 mt-1">Все пермиты без фильтра</p>
+      </div>
+      <div class="bg-white rounded-xl shadow-sm border border-purple-200 p-4">
+        <p class="text-sm text-purple-600">Matching Types</p>
+        <p class="text-2xl font-bold text-purple-700">{{ stats.matching_types || 0 }}</p>
+        <p class="text-xs text-gray-400 mt-1">Подходят под TARGET_CONFIG</p>
+      </div>
+      <div class="bg-white rounded-xl shadow-sm border border-purple-200 p-4">
+        <p class="text-sm text-purple-600">Owner-Builders</p>
+        <p class="text-2xl font-bold text-purple-700">{{ stats.owner_builders_from_matching || 0 }}</p>
+        <p class="text-xs text-gray-400 mt-1">Из matching types</p>
+      </div>
+    </div>
+    <div v-else class="grid grid-cols-2 md:grid-cols-4 gap-4">
       <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-4">
         <p class="text-sm text-gray-500">{{ activeTab === 'zillow' ? 'Total Homes' : 'Total Permits' }}</p>
         <p class="text-2xl font-bold text-gray-900">{{ stats.total || 0 }}</p>
@@ -27,11 +44,11 @@
       </div>
       <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-4">
         <p class="text-sm text-gray-500">{{ activeTab === 'zillow' ? 'Unique' : 'Owner-Builders' }}</p>
-        <p class="text-2xl font-bold text-blue-600">{{ stats.secondary || 0 }}</p>
+        <p class="text-2xl font-bold text-gray-900">{{ stats.secondary || 0 }}</p>
       </div>
       <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-4">
         <p class="text-sm text-gray-500">Total Value</p>
-        <p class="text-2xl font-bold text-green-600">{{ formatPrice(stats.total_value) }}</p>
+        <p class="text-2xl font-bold text-gray-900">{{ formatPrice(stats.total_value) }}</p>
       </div>
     </div>
 
@@ -40,7 +57,7 @@
       <!-- Price/Cost Distribution -->
       <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
         <h3 class="text-lg font-semibold text-gray-900 mb-4">
-          {{ activeTab === 'zillow' ? 'Price Distribution' : 'Cost Distribution' }}
+          {{ activeTab === 'zillow' ? 'Price Distribution' : activeTab === 'mbp' ? 'By Jurisdiction' : 'Cost Distribution' }}
         </h3>
         <div class="h-64">
           <canvas ref="distributionChart"></canvas>
@@ -61,7 +78,7 @@
       <!-- Pie Chart -->
       <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
         <h3 class="text-lg font-semibold text-gray-900 mb-4">
-          {{ activeTab === 'zillow' ? 'Home Types' : 'Owner-Builder Ratio' }}
+          {{ activeTab === 'zillow' ? 'Home Types' : activeTab === 'mbp' ? 'Owner-Builder Ratio' : 'Owner-Builder Ratio' }}
         </h3>
         <div class="h-64 flex items-center justify-center">
           <canvas ref="pieChart"></canvas>
@@ -85,7 +102,7 @@
         <h3 class="text-lg font-semibold text-gray-900">Map View</h3>
         <div class="flex items-center gap-2">
           <label class="flex items-center gap-2 text-sm text-gray-600">
-            <input type="checkbox" v-model="showZillowMarkers" class="rounded text-blue-600" />
+            <input type="checkbox" v-model="showZillowMarkers" class="rounded text-gray-900" />
             Zillow Homes
           </label>
           <label class="flex items-center gap-2 text-sm text-gray-600">
@@ -103,7 +120,7 @@
     <!-- Data Summary Table -->
     <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
       <h3 class="text-lg font-semibold text-gray-900 mb-4">
-        {{ activeTab === 'zillow' ? 'Top Cities Summary' : 'Permit Class Summary' }}
+        {{ activeTab === 'zillow' ? 'Top Cities Summary' : activeTab === 'mbp' ? 'Jurisdiction Summary' : 'Permit Class Summary' }}
       </h3>
       <div class="overflow-x-auto">
         <table class="min-w-full divide-y divide-gray-200">
@@ -138,13 +155,15 @@ import { ref, reactive, computed, watch, onMounted, onUnmounted, nextTick } from
 import {
   getZillowStats, getZillowPriceDistribution, getZillowTimeline, getZillowByCity, getZillowHomeTypes,
   getPermitStats, getPermitsCostDistribution, getPermitsTimeline, getOwnerBuilderRatio, getPermitsByClass,
-  getMapZillowHomes, getMapPermits
+  getMapZillowHomes, getMapPermits,
+  getMBPStats
 } from '../api'
 
 // Tabs
 const tabs = [
   { id: 'zillow', name: 'Zillow Analytics' },
-  { id: 'permits', name: 'Permits Analytics' }
+  { id: 'permits', name: 'Permits Analytics' },
+  { id: 'mbp', name: 'MyBuildingPermit Analytics' }
 ]
 const activeTab = ref('zillow')
 
@@ -268,6 +287,47 @@ async function loadPermitsData() {
 
   } catch (error) {
     console.error('Error loading Permits data:', error)
+  }
+}
+
+async function loadMBPData() {
+  try {
+    // Stats
+    const mbpStats = await getMBPStats()
+    stats.total = mbpStats.total || 0
+    stats.matching_types = mbpStats.matching_types || 0
+    stats.owner_builders_from_matching = mbpStats.owner_builders_from_matching || 0
+    stats.avg_value = 0
+    stats.secondary = mbpStats.owner_builders || 0
+    stats.total_value = 0
+
+    // By jurisdiction (bar)
+    const byJurisdiction = Object.entries(mbpStats.by_jurisdiction || {}).map(([jurisdiction, count]) => ({
+      label: jurisdiction,
+      count: count
+    }))
+    updateBarChart(byJurisdiction)
+    summaryData.value = byJurisdiction.map(j => ({
+      label: j.label,
+      count: j.count,
+      percentage: 0
+    }))
+
+    // Owner-builder ratio (pie)
+    const total = mbpStats.total || 0
+    const owners = mbpStats.owner_builders || 0
+    const contractors = total - owners
+    updatePieChart([
+      { label: 'Owner-Builder', count: owners },
+      { label: 'Licensed Contractor', count: contractors }
+    ])
+
+    // Empty charts for now (MBP doesn't have cost/timeline data)
+    updateDistributionChart([])
+    updateTimelineChart([])
+
+  } catch (error) {
+    console.error('Error loading MBP data:', error)
   }
 }
 
@@ -471,7 +531,7 @@ async function loadMapMarkers() {
         if (m.latitude && m.longitude) {
           const marker = L.marker([m.latitude, m.longitude], {
             icon: L.divIcon({
-              className: 'bg-purple-600 w-3 h-3 rounded-full border-2 border-white',
+              className: 'bg-gray-900 w-3 h-3 rounded-full border-2 border-white',
               iconSize: [12, 12]
             })
           }).bindPopup(`<b>${m.title}</b><br>${m.address || 'N/A'}`)
@@ -488,6 +548,8 @@ watch(activeTab, async () => {
   await nextTick()
   if (activeTab.value === 'zillow') {
     await loadZillowData()
+  } else if (activeTab.value === 'mbp') {
+    await loadMBPData()
   } else {
     await loadPermitsData()
   }

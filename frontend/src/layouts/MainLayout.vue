@@ -5,7 +5,7 @@
       <!-- Logo -->
       <div class="h-16 flex items-center px-6 border-b border-gray-200">
         <div class="flex items-center gap-3">
-          <div class="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center">
+          <div class="w-8 h-8 bg-gray-900 rounded-md flex items-center justify-center">
             <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
                 d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/>
@@ -23,7 +23,7 @@
           :to="item.path"
           class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors"
           :class="isActive(item.path) 
-            ? 'bg-blue-50 text-blue-700' 
+            ? 'bg-gray-100 text-gray-900' 
             : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'"
         >
           <component :is="item.icon" class="w-5 h-5" />
@@ -34,11 +34,7 @@
       <!-- Bottom section -->
       <div class="p-4 border-t border-gray-200">
         <div class="px-3 py-2 text-xs text-gray-500">
-          <div class="flex items-center justify-between">
-            <span>Version 1.0.0</span>
-            <a href="http://localhost:8000/docs" target="_blank" 
-               class="text-blue-600 hover:text-blue-700">API Docs</a>
-          </div>
+          <span>Version 1.0.0</span>
         </div>
       </div>
     </aside>
@@ -129,6 +125,22 @@ const navItems = [
     }
   },
   {
+    name: 'MyBuildingPermit',
+    path: '/mybuildingpermit',
+    icon: {
+      render() {
+        return h('svg', { fill: 'none', stroke: 'currentColor', viewBox: '0 0 24 24' }, [
+          h('path', { 
+            'stroke-linecap': 'round', 
+            'stroke-linejoin': 'round', 
+            'stroke-width': '2',
+            d: 'M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4'
+          })
+        ])
+      }
+    }
+  },
+  {
     name: 'Analytics',
     path: '/analytics',
     icon: {
@@ -155,6 +167,22 @@ const navItems = [
             'stroke-linejoin': 'round', 
             'stroke-width': '2',
             d: 'M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4m0 5c0 2.21-3.582 4-8 4s-8-1.79-8-4'
+          })
+        ])
+      }
+    }
+  },
+  {
+    name: 'Рассылка',
+    path: '/email',
+    icon: {
+      render() {
+        return h('svg', { fill: 'none', stroke: 'currentColor', viewBox: '0 0 24 24' }, [
+          h('path', { 
+            'stroke-linecap': 'round', 
+            'stroke-linejoin': 'round', 
+            'stroke-width': '2',
+            d: 'M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z'
           })
         ])
       }

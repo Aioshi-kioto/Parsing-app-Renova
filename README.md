@@ -1,27 +1,26 @@
 # Renova Parse CRM
 
-Unified CRM-like application for real estate data parsing and analytics. Combines Zillow property parsing and Seattle Building Permits data into a single professional interface.
+Unified CRM-like application for real estate data parsing and analytics. Combines Zillow property parsing, Seattle Building Permits, and MyBuildingPermit (King County) into a single professional interface.
 
 ## Features
 
-- **Zillow Parser** — Extract property listings from Zillow search URLs
-  - QuadTree-based tile system for comprehensive coverage
-  - Deduplication and data normalization
-  - Export to CSV/Excel
+- **Zillow Parser** — Extract property listings from Zillow search URLs  
+  QuadTree-based tile system, deduplication, export to CSV/Excel.
 
-- **Permit Parser** — Seattle Building Permits data
-  - Integration with Socrata SODA API
-  - Owner-Builder verification via Accela Portal
-  - Filtering by class, cost, year
+- **Permit Parser** — Seattle Building Permits  
+  Socrata SODA API, Owner-Builder verification via Accela Portal, filtering by class, cost, year.
 
-- **Analytics Dashboard** — Price/cost charts, timelines, maps, KPI statistics
-- **Data Management** — Unified SQLite database, filtering, export
+- **MyBuildingPermit Parser** — King County area (15 jurisdictions)  
+  Playwright browser automation, automatic Owner-Builder identification, export to CSV.
+
+- **Analytics Dashboard** — Price/cost charts, timelines, maps, KPI statistics.
+- **Data Management** — Unified SQLite database, filtering, export.
 
 ## Tech Stack
 
-| Layer    | Stack                          |
-|----------|--------------------------------|
-| Backend  | Python 3.9+, FastAPI, SQLite, Playwright |
+| Layer   | Stack |
+|--------|--------|
+| Backend | Python 3.9+, FastAPI, SQLite, Playwright |
 | Frontend | Vue 3, Vite, Tailwind CSS, Chart.js, Leaflet.js |
 
 ---
@@ -33,79 +32,118 @@ Unified CRM-like application for real estate data parsing and analytics. Combine
 - **Python 3.9+**
 - **Node.js 18+** and npm
 
-### One Command Launch
+#### macOS (MacBook)
+
+Install if needed:
+
+```bash
+# Homebrew (if not installed): https://brew.sh
+/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+
+# Python 3
+brew install python@3.11
+
+# Node.js 18+
+brew install node@20
+```
+
+Use `python3` and `npm` in the commands below.
+
+#### Windows
+
+Use `python` and `npm`. Optionally double-click `start.bat` to launch.
+
+### One-command launch
 
 ```bash
 python start.py
 ```
 
-Или: `npm start` / двойной клик по `start.bat` (Windows).
+Or: `npm start`  
+On macOS/Linux you can also use: `chmod +x start.sh && ./start.sh`
 
-**Скрипт автоматически:**
-1. Проверяет Python и Node.js
-2. Устанавливает зависимости (pip + npm), если их нет
-3. Устанавливает Playwright (Chromium)
-4. Запускает backend (порт 8000) и frontend (порт 5173)
+The script will:
 
-### Остановка и перезапуск
+1. Check Python and Node.js
+2. Install dependencies (pip + npm) if missing
+3. Install Playwright (Chromium) for Owner-Builder verification
+4. Start backend (port 8000) and frontend (port 5173)
 
-1. **Остановить все:** нажмите `Ctrl+C` в терминале, где запущен `start.py`
-2. **Закрыть все терминалы:** в Cursor/VS Code — правый клик по панели терминалов → "Kill All Terminals"
-3. **Запуск с нуля:** откройте новый терминал и выполните `python start.py`
+### Stopping and restarting
+
+1. **Stop everything:** press **Ctrl+C** in the terminal where `start.py` is running (on Mac use **Ctrl+C** in Terminal, not Cmd).
+2. **Kill all terminals:** in Cursor/VS Code — right-click terminal panel → "Kill All Terminals".
+3. **Start again:** open a new terminal and run `python start.py` (or `python3 start.py` on Mac).
 
 ---
 
-## Project Structure
+## Running on macOS (for the customer)
+
+1. **Clone the repository** (or download and unzip):
+
+   ```bash
+   git clone <repository-url> renova-parse-app
+   cd renova-parse-app
+   ```
+
+2. **Install prerequisites** (see above) if Python 3.9+ or Node 18+ are not installed.
+
+3. **Start the app:**
+
+   ```bash
+   python3 start.py
+   ```
+
+   Wait until you see:
+   - `Backend API:  http://localhost:8000`
+   - `Frontend:     http://localhost:5173`
+
+4. **Open in browser:**  
+   Go to **http://localhost:5173**
+
+5. **Stop:** Press **Ctrl+C** in the same terminal.
+
+---
+
+## Project structure
 
 ```
 renova-parse-app/
 ├── backend/                    # FastAPI backend
-│   ├── routers/                # API endpoints
-│   │   ├── zillow.py           # Zillow parse, status, export
-│   │   ├── permits.py          # Permits parse, status, export
-│   │   └── analytics.py        # Charts, maps, stats
-│   ├── services/               # Business logic
-│   │   ├── zillow_parser.py    # Zillow parsing (uses parsers/)
-│   │   └── permit_parser.py   # Seattle permits (Socrata + Accela)
-│   ├── data/                   # SQLite database
-│   ├── database.py
-│   ├── models.py
-│   ├── main.py
+│   ├── routers/                # API endpoints (zillow, permits, mybuildingpermit, analytics)
+│   ├── services/               # Business logic (parsers)
+│   ├── data/                   # SQLite database (created at runtime)
+│   ├── database.py, models.py, main.py
 │   └── requirements.txt
-│
-├── frontend/                   # Vue 3 + Vite
-│   ├── src/
-│   │   ├── views/              # Dashboard, ZillowParse, PermitParse, Analytics, AllData
-│   │   ├── layouts/            # MainLayout (sidebar)
-│   │   ├── router/
-│   │   └── api.js              # API client
+├── frontend/                    # Vue 3 + Vite
+│   ├── src/views/              # Dashboard, ZillowParse, PermitParse, MyBuildingPermit, Analytics, AllData
+│   ├── src/api.js              # API client
 │   └── package.json
-│
-├── parsers/                    # Parser engines (used by backend)
-│   ├── zillow-parsing/         # Zillow core (QuadTree, Playwright)
-│   └── permit-parsing/         # Permit reference/utilities
-│
-├── start.py                    # Unified launcher
-├── start.bat                   # Windows launcher
-├── package.json                # npm start → python start.py
-└── README.md
+├── parsers/                     # Parser engines / reference
+│   ├── zillow-parsing/
+│   ├── mybuildingpermit-parsing/
+│   └── permit-parsing/
+├── start.py                     # Unified launcher (all platforms)
+├── start.sh                     # macOS/Linux launcher
+├── start.bat                    # Windows launcher
+├── package.json                 # npm start → python start.py
+├── README.md
+└── RELOAD_STEPS.md              # Troubleshooting and full reload
 ```
-
-> **Примечание:** Папки `permit parsing/` и `zillow-parsing/` в корне — это старые дубликаты. Используется только `parsers/`. Их можно удалить.
 
 ---
 
-## Main Commands
+## Main commands
 
-| Команда | Описание |
-|---------|----------|
-| `python start.py` | Запуск backend + frontend (с проверкой зависимостей) |
-| `python start.py --backend` | Только backend |
-| `python start.py --frontend` | Только frontend |
-| `python start.py --skip-install` | Запуск без установки зависимостей |
-| `npm start` | Алиас для `python start.py` |
+| Command | Description |
+|--------|-------------|
+| `python start.py` | Start backend + frontend (installs deps if needed) |
+| `python start.py --backend` | Backend only |
+| `python start.py --frontend` | Frontend only |
+| `python start.py --skip-install` | Start without installing dependencies |
+| `npm start` | Same as `python start.py` |
 
-### Ручной запуск (если нужен раздельный)
+### Manual start (separate terminals)
 
 ```bash
 # Backend
@@ -114,7 +152,7 @@ pip install -r requirements.txt
 playwright install chromium
 uvicorn main:app --reload
 
-# Frontend (в другом терминале)
+# Frontend (other terminal)
 cd frontend
 npm install
 npm run dev
@@ -124,22 +162,40 @@ npm run dev
 
 ## URLs
 
-| Сервис | URL |
-|--------|-----|
-| Frontend | http://localhost:5173 |
-| Backend API | http://localhost:8000 |
+| Service     | URL |
+|------------|-----|
+| Frontend   | http://localhost:5173 |
+| Backend API| http://localhost:8000 |
 | API Docs (Swagger) | http://localhost:8000/docs |
-| ReDoc | http://localhost:8000/redoc |
+| ReDoc      | http://localhost:8000/redoc |
 
 ---
 
 ## Usage
 
-1. **Dashboard** — общая статистика, быстрые действия
-2. **Zillow Parsing** — вставьте URL поиска Zillow, запустите парсинг
-3. **Permits Parsing** — настройте год, класс, стоимость, верификацию owner-builder
-4. **Analytics** — графики, карты, KPI
-5. **All Data** — просмотр, фильтры, экспорт CSV
+1. **Dashboard** — Overview, quick actions.
+2. **Zillow Parsing** — Paste Zillow search URL, run parsing.
+3. **Permits Parsing** — Seattle permits: year, class, cost, Owner-Builder verification.
+4. **MyBuildingPermit** — King County permits: select cities, Owner-Builder detection.
+5. **Analytics** — Charts, maps, KPI.
+6. **All Data** — View, filter, export CSV/Excel.
+
+**Browser visible:** In Permit Parse and MyBuildingPermit forms, the "Browser visible" toggle shows the browser window during verification when enabled; when off, the browser runs in the background (headless).  
+**Cancel a running job:** Use the **Cancel** button on the job card; closing the terminal does not stop the backend.
+
+---
+
+## Publishing to GitHub
+
+- Ensure `.gitignore` is present (database files, `node_modules`, `.env`, `venv` are ignored).
+- Do not commit `backend/data/*.db` or secrets.
+- After push, the customer can clone and follow "Running on macOS" above.
+
+---
+
+## Troubleshooting
+
+See **RELOAD_STEPS.md** for full reload, Playwright setup, and cache clearing.
 
 ---
 

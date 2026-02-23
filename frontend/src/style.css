@@ -17,47 +17,47 @@ body {
     @apply bg-white rounded-xl shadow-card border border-gray-200 transition-shadow hover:shadow-card-hover;
   }
   
-  /* Button Styles */
+  /* Button Styles - Notion-like minimal black */
   .btn-primary {
-    @apply px-4 py-2 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition-colors disabled:bg-gray-300 disabled:cursor-not-allowed;
+    @apply px-4 py-2 bg-gray-900 text-white rounded-md font-medium hover:bg-black transition-colors disabled:bg-gray-300 disabled:cursor-not-allowed;
   }
   
   .btn-secondary {
-    @apply px-4 py-2 bg-white text-gray-700 rounded-lg font-medium border border-gray-300 hover:bg-gray-50 transition-colors;
+    @apply px-4 py-2 bg-white text-gray-700 rounded-md font-medium border border-gray-200 hover:bg-gray-50 transition-colors;
   }
   
   .btn-success {
-    @apply px-4 py-2 bg-green-600 text-white rounded-lg font-medium hover:bg-green-700 transition-colors;
+    @apply px-4 py-2 bg-gray-900 text-white rounded-md font-medium hover:bg-black transition-colors;
   }
   
   .btn-danger {
-    @apply px-4 py-2 bg-red-600 text-white rounded-lg font-medium hover:bg-red-700 transition-colors;
+    @apply px-4 py-2 bg-gray-900 text-white rounded-md font-medium hover:bg-black transition-colors;
   }
   
   /* Input Styles */
   .input-field {
-    @apply w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors;
+    @apply w-full px-3 py-2 border border-gray-200 rounded-md text-sm focus:ring-1 focus:ring-gray-900 focus:border-gray-900 transition-colors;
   }
   
   /* Badge Styles */
   .badge {
-    @apply px-2.5 py-1 text-xs font-medium rounded-full;
+    @apply px-2.5 py-1 text-xs font-medium rounded-md;
   }
   
   .badge-blue {
-    @apply bg-blue-100 text-blue-700;
+    @apply bg-gray-100 text-gray-700;
   }
   
   .badge-green {
-    @apply bg-green-100 text-green-700;
+    @apply bg-gray-100 text-gray-700;
   }
   
   .badge-purple {
-    @apply bg-purple-100 text-purple-700;
+    @apply bg-gray-100 text-gray-700;
   }
   
   .badge-amber {
-    @apply bg-amber-100 text-amber-700;
+    @apply bg-gray-100 text-gray-600;
   }
   
   .badge-gray {

@@ -96,18 +96,48 @@ def install_frontend_deps():
     return True
 
 def install_playwright():
-    """Ensure Playwright browsers are installed."""
-    print(f"{Colors.BLUE}[Backend]{Colors.ENDC} Checking Playwright browsers...")
+    """Check Playwright availability and install browser binaries if missing."""
+    print(f"{Colors.BLUE}[Backend]{Colors.ENDC} Checking Playwright...")
+    
+    # 1. Проверяем, установлен ли пакет playwright
     try:
+        import playwright
+    except ImportError:
+        print(f"{Colors.WARNING}[Backend]{Colors.ENDC} Playwright not found, installing...")
+        try:
+            subprocess.run(
+                [sys.executable, "-m", "pip", "install", "playwright", "playwright-stealth", "-q"],
+                check=True
+            )
+        except subprocess.CalledProcessError as e:
+            print(f"{Colors.FAIL}[Backend]{Colors.ENDC} Failed to install Playwright: {e}")
+            return False
+    
+    # 2. Проверяем, установлен ли Chromium
+    try:
+        from playwright.sync_api import sync_playwright
+        with sync_playwright() as p:
+            browser = p.chromium.launch(headless=True)
+            browser.close()
+        print(f"{Colors.GREEN}[Backend]{Colors.ENDC} Playwright browsers ready [OK]")
+        return True
+    except Exception:
+        pass
+    
+    # 3. Скачиваем Chromium (из папки backend, тот же Python что и uvicorn)
+    print(f"{Colors.WARNING}[Backend]{Colors.ENDC} Chromium not found, downloading...")
+    try:
+        backend_dir = Path(__file__).parent / "backend"
         subprocess.run(
             [sys.executable, "-m", "playwright", "install", "chromium"],
             check=True,
-            capture_output=True
+            cwd=str(backend_dir),
         )
         print(f"{Colors.GREEN}[Backend]{Colors.ENDC} Playwright browsers ready [OK]")
-    except subprocess.CalledProcessError:
-        print(f"{Colors.WARNING}[Backend]{Colors.ENDC} Could not install Playwright browsers (may already be installed)")
-    return True
+        return True
+    except subprocess.CalledProcessError as e:
+        print(f"{Colors.FAIL}[Backend]{Colors.ENDC} Failed to install Chromium: {e}")
+        return False
 
 def find_free_port(start=8000, max_tries=5):
     """Find first available port."""
@@ -205,7 +235,8 @@ def main():
         if args.backend or start_both:
             if not install_backend_deps():
                 sys.exit(1)
-            install_playwright()
+            if not install_playwright():
+                print(f"{Colors.WARNING}[Backend]{Colors.ENDC} App will start, but Owner-Builder verification will be disabled")
         
         if args.frontend or start_both:
             if not install_frontend_deps():
@@ -230,7 +261,6 @@ def main():
         print()
         if args.backend or start_both:
             print(f"  {Colors.BLUE}Backend API:{Colors.ENDC}  http://localhost:{backend_port}")
-            print(f"  {Colors.BLUE}API Docs:{Colors.ENDC}     http://localhost:{backend_port}/docs")
         if args.frontend or start_both:
             print(f"  {Colors.CYAN}Frontend:{Colors.ENDC}     http://localhost:5173 (or 5174 if 5173 busy)")
         print()
