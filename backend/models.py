@@ -169,6 +169,7 @@ class Permit(BaseModel):
     is_owner_builder: Optional[bool] = None
     verification_status: str = "pending"
     work_performer_text: Optional[str] = None
+    contacts_text: Optional[str] = None
     portal_link: Optional[str] = None
     latitude: Optional[float] = None
     longitude: Optional[float] = None

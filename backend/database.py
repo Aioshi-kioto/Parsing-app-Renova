@@ -141,6 +141,11 @@ def init_database():
             UNIQUE(permit_num)
         )
     """)
+    # Миграция: контакты из блока Contacts на странице пермита
+    try:
+        cursor.execute("ALTER TABLE permits ADD COLUMN contacts_text TEXT")
+    except sqlite3.OperationalError:
+        pass  # колонка уже есть
     
     # ===============================
     # ИНДЕКСЫ
@@ -431,9 +436,11 @@ def insert_permit(job_id: int, permit_data: Dict[str, Any]) -> bool:
 
 def update_permit_verification(permit_num: str, is_owner_builder: Optional[bool], 
                                work_performer_text: str = None,
-                               verification_error: str = None):
-    """Обновить статус верификации пермита.
+                               verification_error: str = None,
+                               contacts_text: str = None):
+    """Обновить статус верификации пермита и контакты из блока Contacts.
     verification_error: если верификация не выполнялась (например Playwright недоступен).
+    contacts_text: текст блока Contacts (Applicant, Owner, Financially Responsible Party и т.д.).
     """
     conn = get_connection()
     cursor = conn.cursor()
@@ -444,17 +451,22 @@ def update_permit_verification(permit_num: str, is_owner_builder: Optional[bool]
     else:
         verification_status = 'verified' if is_owner_builder is not None else 'unknown'
     
+    # Ограничиваем размер contacts_text для БД (например 2000 символов)
+    contacts_val = (contacts_text[:2000] if contacts_text and len(contacts_text) > 2000 else contacts_text) if contacts_text else None
+    
     cursor.execute("""
         UPDATE permits SET 
             is_owner_builder = ?,
             verification_status = ?,
             work_performer_text = ?,
+            contacts_text = ?,
             updated_at = CURRENT_TIMESTAMP
         WHERE permit_num = ?
     """, (
         1 if is_owner_builder else (0 if is_owner_builder is False else None),
         verification_status,
         work_performer_text,
+        contacts_val,
         permit_num
     ))
     conn.commit()

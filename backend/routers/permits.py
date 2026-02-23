@@ -197,7 +197,7 @@ async def get_permits(
                p.permit_type_mapped, p.permit_type_desc, p.description, p.est_project_cost,
                p.applied_date, p.issued_date, p.status_current, p.address, p.city, 
                p.state, p.zipcode, p.contractor_name, p.is_owner_builder,
-               p.verification_status, p.work_performer_text, p.portal_link,
+               p.verification_status, p.work_performer_text, p.contacts_text, p.portal_link,
                p.latitude, p.longitude, p.created_at, p.updated_at
         FROM permits p
         WHERE {where}
@@ -315,7 +315,7 @@ async def export_job(
                est_project_cost, applied_date, issued_date, status_current,
                address, city, state, zipcode,
                contractor_name, is_owner_builder, verification_status, 
-               work_performer_text, portal_link, created_at
+               work_performer_text, contacts_text, portal_link, created_at
         FROM permits
         WHERE job_id = ? {owner_filter}
         ORDER BY applied_date DESC
@@ -330,7 +330,7 @@ async def export_job(
         "permit_num", "permit_class", "permit_type_mapped", "permit_type_desc", "description",
         "est_project_cost", "applied_date", "issued_date", "status_current",
         "address", "city", "state", "zipcode", "contractor_name",
-        "owner_builder", "verification_status", "portal_link", "created_at",
+        "owner_builder", "contacts_text", "verification_status", "portal_link", "created_at",
     ]
     rows_export = []
     for p in permits:
@@ -407,7 +407,7 @@ async def export_all(
                est_project_cost, applied_date, issued_date, status_current,
                address, city, state, zipcode,
                contractor_name, is_owner_builder, verification_status,
-               work_performer_text, portal_link, created_at
+               work_performer_text, contacts_text, portal_link, created_at
         FROM permits
         WHERE {where}
         ORDER BY applied_date DESC
@@ -423,7 +423,7 @@ async def export_all(
         "permit_num", "permit_class", "permit_type_mapped", "permit_type_desc", "description",
         "est_project_cost", "applied_date", "issued_date", "status_current",
         "address", "city", "state", "zipcode", "contractor_name",
-        "owner_builder", "verification_status", "portal_link", "created_at",
+        "owner_builder", "contacts_text", "verification_status", "portal_link", "created_at",
     ]
     rows_export = []
     for p in permits:
@@ -433,8 +433,9 @@ async def export_all(
             val = "Yes" if p["is_owner_builder"] else "No"
         else:
             val = "Unknown"
-        row = {k: p.get(k) for k in export_columns if k != "owner_builder"}
+        row = {k: p.get(k) for k in export_columns if k not in ("owner_builder", "contacts_text")}
         row["owner_builder"] = val
+        row["contacts_text"] = p.get("contacts_text")
         # порядок колонок как в export_columns
         rows_export.append({k: row.get(k) for k in export_columns})
     

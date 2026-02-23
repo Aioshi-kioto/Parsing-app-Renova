@@ -315,6 +315,7 @@
                 <th class="px-3 py-3 text-left text-xs font-semibold text-teal-800 uppercase tracking-wider">Issued</th>
                 <th class="px-3 py-3 text-left text-xs font-semibold text-teal-800 uppercase tracking-wider">Status</th>
                 <th class="px-3 py-3 text-left text-xs font-semibold text-teal-800 uppercase tracking-wider">Contractor</th>
+                <th class="px-3 py-3 text-left text-xs font-semibold text-teal-800 uppercase tracking-wider">Contacts</th>
                 <th class="px-3 py-3 text-left text-xs font-semibold text-teal-800 uppercase tracking-wider">Verification</th>
                 <th class="px-3 py-3 text-left text-xs font-semibold text-teal-800 uppercase tracking-wider">Work Performer</th>
                 <th class="px-3 py-3 text-left text-xs font-semibold text-teal-800 uppercase tracking-wider">Owner-Builder</th>
@@ -339,6 +340,7 @@
                 <td class="px-3 py-2.5 text-sm text-gray-600 whitespace-nowrap">{{ permit.issued_date || '—' }}</td>
                 <td class="px-3 py-2.5 text-sm text-gray-600">{{ permit.status_current || '—' }}</td>
                 <td class="px-3 py-2.5 text-sm text-gray-700 max-w-[120px] truncate" :title="permit.contractor_name">{{ permit.contractor_name || '—' }}</td>
+                <td class="px-3 py-2.5 text-sm text-gray-700 max-w-[200px] truncate" :title="permit.contacts_text">{{ permit.contacts_text || '—' }}</td>
                 <td class="px-3 py-2.5 text-sm" :class="permit.verification_status === 'error' ? 'text-red-600' : 'text-gray-600'" :title="permit.verification_status === 'error' ? (permit.work_performer_text || 'Verification did not run') : ''">{{ permit.verification_status === 'error' ? 'Error' : (permit.verification_status || '—') }}</td>
                 <td class="px-3 py-2.5 text-sm text-gray-600 max-w-[120px] truncate" :title="permit.work_performer_text">{{ permit.work_performer_text || '—' }}</td>
                 <td class="px-3 py-2.5">

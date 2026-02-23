@@ -248,6 +248,7 @@ async def verify_permit_async(
             "permit_num": permit_num,
             "is_owner_builder": None,
             "work_performer_text": None,
+            "contacts": None,
             "error": "Job cancelled",
         }
     try:
@@ -258,6 +259,7 @@ async def verify_permit_async(
             "permit_num": permit_num,
             "is_owner_builder": None,
             "work_performer_text": None,
+            "contacts": None,
             "error": "Playwright not installed. Run: pip install playwright && playwright install chromium"
         }
     
@@ -290,6 +292,7 @@ async def verify_permit_async(
                     "permit_num": permit_num,
                     "is_owner_builder": None,
                     "work_performer_text": None,
+                    "contacts": None,
                     "error": "Job cancelled",
                 }
             
@@ -303,6 +306,7 @@ async def verify_permit_async(
                     "permit_num": permit_num,
                     "is_owner_builder": None,
                     "work_performer_text": None,
+                    "contacts": None,
                     "error": "Job cancelled",
                 }
             
@@ -325,6 +329,7 @@ async def verify_permit_async(
                     "permit_num": permit_num,
                     "is_owner_builder": None,
                     "work_performer_text": None,
+                    "contacts": None,
                     "error": "Job cancelled",
                 }
             
@@ -333,7 +338,7 @@ async def verify_permit_async(
             # — Licensed Contractor: Col1 "Who will be performing...?" → Col2 "Licensed Contractor"; Col1 "Contractor License:" → Col2 "MIOVIRA871J4".
             # Ищем заголовок CONTRACTOR DISCLOSURE, затем пару Col1/Col2 с "Who will be performing all the work?".
             result_js = await page.evaluate("""() => {
-                const out = { workPerformer: null, contractorLicense: null };
+                const out = { workPerformer: null, contractorLicense: null, contacts: null };
                 const whoText = 'Who will be performing all the work';
                 const licenseText = 'Contractor License';
                 const titles = document.querySelectorAll('.MoreDetail_ItemTitle');
@@ -366,6 +371,23 @@ async def verify_permit_async(
                         break;
                     }
                 }
+                // Блок Contacts: все .contact-container (Applicant, Owner, Financially Responsible Party и т.д.)
+                const contactParts = [];
+                const containers = document.querySelectorAll('.contact-container');
+                for (const c of containers) {
+                    const heading = c.querySelector('.contact-heading');
+                    const role = heading ? (heading.textContent || '').trim() : '';
+                    const divs = c.querySelectorAll(':scope > div');
+                    const lines = [];
+                    for (const d of divs) {
+                        if (d.classList.contains('contact-heading')) continue;
+                        const t = (d.textContent || '').trim();
+                        if (t) lines.push(t);
+                    }
+                    if (role) contactParts.push(role + ': ' + lines.join(', '));
+                    else if (lines.length) contactParts.push(lines.join(', '));
+                }
+                if (contactParts.length) out.contacts = contactParts.join(' | ');
                 return out;
             }""")
             
@@ -393,10 +415,14 @@ async def verify_permit_async(
                 f"Who will be performing: '{work_performer_text}' | Contractor License: '{contractor_license}' | is_owner={is_owner}"
             )
             
+            contacts_text = (result_js or {}).get("contacts") or ""
+            contacts_text = (contacts_text.strip() if contacts_text else None) or None
+
             return {
                 "permit_num": permit_num,
                 "is_owner_builder": is_owner,
                 "work_performer_text": work_performer_text,
+                "contacts": contacts_text,
                 "error": None
             }
             
@@ -406,6 +432,7 @@ async def verify_permit_async(
             "permit_num": permit_num,
             "is_owner_builder": None,
             "work_performer_text": None,
+            "contacts": None,
             "error": str(e)
         }
 
@@ -539,6 +566,7 @@ def parse_permits(
                     permit_num = result.get("permit_num")
                     is_owner = result.get("is_owner_builder")
                     work_text = result.get("work_performer_text")
+                    contacts_text = result.get("contacts")
                     err = result.get("error")
                     
                     if err == "Job cancelled":
@@ -548,7 +576,8 @@ def parse_permits(
                     
                     update_permit_verification(
                         permit_num, is_owner, work_text,
-                        verification_error=err if err else None
+                        verification_error=err if err else None,
+                        contacts_text=contacts_text
                     )
                     verified_count += 1
                     if is_owner:
