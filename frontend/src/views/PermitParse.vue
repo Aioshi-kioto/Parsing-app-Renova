@@ -187,15 +187,15 @@
         <div class="grid grid-cols-3 gap-4">
           <div class="bg-gray-50 rounded-lg p-3">
             <p class="text-sm text-gray-500">Permits Found</p>
-            <p class="text-xl font-bold text-gray-900">{{ currentStatus.permits_found }}</p>
+            <p class="text-xl font-bold text-gray-900">{{ currentStatus.permits_found ?? 0 }}</p>
           </div>
           <div class="bg-gray-50 rounded-lg p-3">
             <p class="text-sm text-gray-500">Verified</p>
-            <p class="text-xl font-bold text-gray-900">{{ currentStatus.permits_verified }}</p>
+            <p class="text-xl font-bold text-gray-900">{{ currentStatus.permits_verified ?? 0 }}</p>
           </div>
           <div class="bg-gray-100 rounded-lg p-3">
             <p class="text-sm text-gray-600">Owner-Builders</p>
-            <p class="text-xl font-bold text-gray-900">{{ currentStatus.owner_builders_found }}</p>
+            <p class="text-xl font-bold text-gray-900">{{ currentStatus.owner_builders_found ?? 0 }}</p>
           </div>
         </div>
 
@@ -451,7 +451,15 @@ async function pollStatus() {
     // Обновляем job в таблице для отображения прогресса
     const idx = jobs.value.findIndex(j => j.id === currentJobId.value)
     if (idx >= 0) {
-      jobs.value[idx] = { ...jobs.value[idx], status: status.status, permits_verified: status.permits_verified, owner_builders_found: status.owner_builders_found, error_message: status.error_message, completed_at: status.completed_at }
+      jobs.value[idx] = {
+        ...jobs.value[idx],
+        status: status.status,
+        permits_found: status.permits_found ?? jobs.value[idx].permits_found,
+        permits_verified: status.permits_verified ?? jobs.value[idx].permits_verified,
+        owner_builders_found: status.owner_builders_found ?? jobs.value[idx].owner_builders_found,
+        error_message: status.error_message,
+        completed_at: status.completed_at
+      }
     }
     if (status.status === 'completed' || status.status === 'failed' || status.status === 'cancelled') {
       if (statusInterval) {
@@ -623,7 +631,7 @@ onMounted(async () => {
   }
   statusInterval = setInterval(() => {
     if (currentJobId.value) pollStatus()
-  }, 3000)
+  }, 2000)
 })
 
 onUnmounted(() => {

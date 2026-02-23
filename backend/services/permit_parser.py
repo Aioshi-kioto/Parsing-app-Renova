@@ -2,6 +2,7 @@
 Permit Parser Service
 Интеграция с Seattle Building Permits парсером
 """
+import os
 import sys
 from pathlib import Path
 import httpx
@@ -33,12 +34,20 @@ SOCRATA_CONFIG = {
     "app_token": None,  # Опционально
 }
 
-# Accela Portal
-# Accela — страница детали пермита (для верификации через Playwright, как в parsers/permit-parsing)
-ACCELA_BASE_URL = "https://cosaccela.seattle.gov"
-ACCELA_PERMIT_URL = f"{ACCELA_BASE_URL}/portal/cap/capDetail.aspx"
+# Верификация: настраиваемые лимиты и задержки (ускорить можно, но риск rate-limit или падений)
+def _verify_batch_size() -> int:
+    """Размер батча (параллельных браузеров). 4–6 обычно ок, 8 — только при хорошем железе."""
+    n = int(os.environ.get("PERMIT_VERIFY_BATCH_SIZE", "6"))
+    return max(1, min(n, 8))
 
-# Ссылка для пользователя (открыть в браузере вручную), как в данных Seattle
+
+VERIFY_DELAY_AFTER_LOAD = 1.2   # сек после загрузки страницы (меньше = быстрее, но возможны пропуски DOM)
+VERIFY_DELAY_AFTER_EXPAND = 0.8 # сек после клика Expand (чтобы CONTRACTOR DISCLOSURE успел отрендериться)
+VERIFY_DELAY_BETWEEN_BATCHES = 0.4  # сек между батчами (снижает нагрузку на портал)
+
+
+# Accela Portal — используем тот же URL, что и у пользователя (services.seattle.gov),
+# чтобы DOM совпадал с блоком "Who will be performing all the work?" / Owner/Lessee
 def portal_link_for_permit(permit_num: str) -> str:
     return f"https://services.seattle.gov/portal/customize/LinkToRecord.aspx?altId={permit_num}"
 
@@ -252,12 +261,8 @@ async def verify_permit_async(
             "error": "Playwright not installed. Run: pip install playwright && playwright install chromium"
         }
     
-    url = (
-        f"{ACCELA_PERMIT_URL}?"
-        f"Module=DPD&TabName=DPD&capID1=&capID2=&capID3="
-        f"&agencyCode=SEATTLE&IsToShowInspection="
-        f"&permitNumber={permit_num}"
-    )
+    # Тот же URL, что открывает пользователь — страница с блоком Contractor Disclosure
+    url = portal_link_for_permit(permit_num)
     
     logger.info(f"[Verify] {permit_num}: Starting verification (headless={headless}, browser visible when False)")
     try:
@@ -302,9 +307,17 @@ async def verify_permit_async(
                 }
             
             await page.wait_for_load_state("networkidle", timeout=30000)
-            await asyncio.sleep(2)  # Задержка
+            await asyncio.sleep(VERIFY_DELAY_AFTER_LOAD)
             
-            # Проверка cancelled перед началом поиска
+            # Раскрыть "More Details" / "Application Information", чтобы блок CONTRACTOR DISCLOSURE был в DOM
+            try:
+                expand = page.get_by_text("Expand More Details", exact=False).or_(page.get_by_text("Expand Application Information", exact=False))
+                if await expand.count() > 0:
+                    await expand.first.click()
+                    await asyncio.sleep(VERIFY_DELAY_AFTER_EXPAND)
+            except Exception:
+                pass
+            
             if _check_job_cancelled(job_id):
                 logger.info(f"[Verify] {permit_num}: Job cancelled before search, closing browser")
                 await browser.close()
@@ -315,111 +328,69 @@ async def verify_permit_async(
                     "error": "Job cancelled",
                 }
             
-            # Ключевая проверка: span с текстом "Owner/Lessee" в Contractor Disclosure
-            # <div class="MoreDetail_ItemColASI MoreDetail_ItemCol2">
-            #   <span class="ACA_SmLabel ACA_SmLabel_FontSize">Owner/Lessee</span>
-            # </div>
-            # Если есть → owner=true, если нет (или Licensed Contractor) → owner=false
-            is_owner = False
-            work_performer_text = None
-            contractor_disclosure_text = None
+            # Блок CONTRACTOR DISCLOSURE (одинаковая структура для обоих случаев):
+            # — Owner/Lessee: Col1 "Who will be performing...?" → Col2 "Owner/Lessee"; далее только "I have submitted...". Строки Contractor License нет.
+            # — Licensed Contractor: Col1 "Who will be performing...?" → Col2 "Licensed Contractor"; Col1 "Contractor License:" → Col2 "MIOVIRA871J4".
+            # Ищем заголовок CONTRACTOR DISCLOSURE, затем пару Col1/Col2 с "Who will be performing all the work?".
+            result_js = await page.evaluate("""() => {
+                const out = { workPerformer: null, contractorLicense: null };
+                const whoText = 'Who will be performing all the work';
+                const licenseText = 'Contractor License';
+                const titles = document.querySelectorAll('.MoreDetail_ItemTitle');
+                let disclosureBlock = null;
+                for (const t of titles) {
+                    if ((t.textContent || '').trim() === 'CONTRACTOR DISCLOSURE') {
+                        disclosureBlock = t.parentElement;
+                        break;
+                    }
+                }
+                const scope = disclosureBlock || document.body;
+                const col1s = scope.querySelectorAll('.MoreDetail_ItemCol1');
+                for (const col1 of col1s) {
+                    const label = (col1.textContent || '').trim();
+                    if (label.indexOf(whoText) === 0) {
+                        const col2 = col1.nextElementSibling && col1.nextElementSibling.classList.contains('MoreDetail_ItemCol2')
+                            ? col1.nextElementSibling
+                            : null;
+                        if (col2) out.workPerformer = (col2.innerText || '').trim();
+                        break;
+                    }
+                }
+                for (const col1 of col1s) {
+                    const label = (col1.textContent || '').trim();
+                    if (label.indexOf(licenseText) === 0) {
+                        const col2 = col1.nextElementSibling && col1.nextElementSibling.classList.contains('MoreDetail_ItemCol2')
+                            ? col1.nextElementSibling
+                            : null;
+                        if (col2) out.contractorLicense = (col2.innerText || '').trim();
+                        break;
+                    }
+                }
+                return out;
+            }""")
             
-            # Пробуем найти секцию Contractor Disclosure для логирования
-            try:
-                # Ищем по разным селекторам секцию Contractor Disclosure
-                disclosure_selectors = [
-                    "text=Contractor Disclosure",
-                    "text=Who will be performing",
-                    "[id*='ContractorDisclosure']",
-                    "[id*='WorkPerformer']",
-                    ".MoreDetail_ItemColASI",
-                ]
-                for selector in disclosure_selectors:
-                    try:
-                        element = await page.query_selector(selector)
-                        if element:
-                            parent = await element.evaluate_handle("el => el.closest('tr') || el.closest('div') || el.closest('table') || el.parentElement")
-                            if parent:
-                                contractor_disclosure_text = await parent.inner_text()
-                                if contractor_disclosure_text and len(contractor_disclosure_text.strip()) > 10:
-                                    break
-                    except:
-                        continue
-            except Exception as e:
-                logger.debug(f"[Verify] {permit_num}: Could not extract Contractor Disclosure section: {e}")
+            work_performer_text = (result_js or {}).get("workPerformer") or ""
+            contractor_license = (result_js or {}).get("contractorLicense") or ""
+            work_performer_text = work_performer_text.strip() if work_performer_text else ""
             
-            # Ищем span с текстом "Owner/Lessee" (case-insensitive, exact и partial)
-            owner_lessee_found = False
-            licensed_contractor_found = False
-            
-            # Вариант 1: exact match "Owner/Lessee"
-            owner_count_exact = await page.get_by_text("Owner/Lessee", exact=True).count()
-            if owner_count_exact > 0:
-                owner_lessee_found = True
+            # Решение только по значению из блока "Who will be performing all the work?"
+            if work_performer_text.lower().startswith("owner") and "lessee" in work_performer_text.lower():
                 is_owner = True
-                work_performer_text = "Owner/Lessee"
+                work_performer_text = work_performer_text.split("\n")[0].strip() or "Owner/Lessee"
+            elif "licensed contractor" in work_performer_text.lower():
+                is_owner = False
+                work_performer_text = work_performer_text.split("\n")[0].strip() or "Licensed Contractor"
             else:
-                # Вариант 2: case-insensitive поиск "owner/lessee" или "owner lessee"
-                body_text_lower = (await page.inner_text("body")).lower()
-                if "owner/lessee" in body_text_lower or "owner lessee" in body_text_lower:
-                    # Проверяем что это не "licensed contractor"
-                    if "licensed contractor" not in body_text_lower[:body_text_lower.find("owner")+50]:
-                        owner_lessee_found = True
-                        is_owner = True
-                        work_performer_text = "Owner/Lessee"
-                
-                # Вариант 3: ищем "Licensed Contractor"
-                contractor_count = await page.get_by_text("Licensed Contractor", exact=False).count()
-                if contractor_count > 0:
-                    licensed_contractor_found = True
-                    is_owner = False
-                    work_performer_text = "Licensed Contractor"
-                elif "licensed contractor" in body_text_lower:
-                    licensed_contractor_found = True
-                    is_owner = False
-                    work_performer_text = "Licensed Contractor"
-            
-            # Если ничего не нашли - ищем по классам CSS
-            if not owner_lessee_found and not licensed_contractor_found:
-                try:
-                    # Ищем span с классом ACA_SmLabel содержащий Owner или Contractor
-                    spans = await page.query_selector_all("span.ACA_SmLabel")
-                    for span in spans:
-                        text = await span.inner_text()
-                        text_lower = text.lower().strip()
-                        if "owner" in text_lower and "lessee" in text_lower:
-                            owner_lessee_found = True
-                            is_owner = True
-                            work_performer_text = text.strip()
-                            break
-                        elif "licensed contractor" in text_lower or ("contractor" in text_lower and "licensed" in text_lower):
-                            licensed_contractor_found = True
-                            is_owner = False
-                            work_performer_text = text.strip()
-                            break
-                except Exception as e:
-                    logger.debug(f"[Verify] {permit_num}: CSS selector search failed: {e}")
-            
-            # Если ничего не найдено - сохраняем текст из Contractor Disclosure или "Not found"
-            if not work_performer_text:
-                if contractor_disclosure_text:
-                    # Берем первые 100 символов из секции Contractor Disclosure
-                    work_performer_text = contractor_disclosure_text[:100].strip()
-                    if len(contractor_disclosure_text) > 100:
-                        work_performer_text += "..."
-                else:
+                is_owner = False
+                if not work_performer_text:
                     work_performer_text = "Not found"
             
             await browser.close()
             
-            # Детальное логирование (в логах — ссылка для ручной проверки, как в permit-parsing)
             portal_link = portal_link_for_permit(permit_num)
-            disclosure_snippet = (contractor_disclosure_text[:200] + "...") if contractor_disclosure_text and len(contractor_disclosure_text) > 200 else (contractor_disclosure_text or "N/A")
             logger.info(
-                f"[Verify] {permit_num} | Open in browser: {portal_link} | "
-                f"Found: Owner/Lessee={owner_lessee_found}, Licensed Contractor={licensed_contractor_found} | "
-                f"Result: is_owner={is_owner}, work_text={work_performer_text} | "
-                f"Disclosure: {disclosure_snippet}"
+                f"[Verify] {permit_num} | {portal_link} | "
+                f"Who will be performing: '{work_performer_text}' | Contractor License: '{contractor_license}' | is_owner={is_owner}"
             )
             
             return {
@@ -444,6 +415,18 @@ def verify_permit_sync(
 ) -> Dict[str, Any]:
     """Синхронная обёртка для верификации. job_id нужен для проверки отмены до запуска браузера."""
     return asyncio.run(verify_permit_async(permit_num, headless=headless, job_id=job_id))
+
+
+async def verify_permits_batch_async(
+    permit_nums: List[str],
+    headless: bool = False,
+    job_id: Optional[int] = None,
+) -> List[Dict[str, Any]]:
+    """Верификация нескольких пермитов параллельно (каждый в своём браузере)."""
+    if not permit_nums:
+        return []
+    tasks = [verify_permit_async(pn, headless=headless, job_id=job_id) for pn in permit_nums]
+    return await asyncio.gather(*tasks, return_exceptions=False)
 
 
 def parse_permits(
@@ -488,6 +471,8 @@ def parse_permits(
             )
             print(f"[PERMIT PARSER] OK Fetched {len(raw_permits)} permits from API")
             check_cancelled()
+            # Сразу обновляем счётчик, чтобы UI показал "Permits Found"
+            update_permit_job(job_id, status="processing", permits_found=len(raw_permits))
         except Exception as api_err:
             err_msg = f"API error: {api_err}"
             print(f"[PERMIT PARSER] ERROR API Error: {err_msg}")
@@ -514,7 +499,6 @@ def parse_permits(
             )
             return
         
-        update_permit_job(job_id, status="processing", permits_found=len(raw_permits))
         logger.info(f"[JOB {job_id}] Processing {len(raw_permits)} permits")
         
         # 2. Сохраняем пермиты в БД
@@ -525,60 +509,63 @@ def parse_permits(
             permit_data["job_id"] = job_id
             insert_permit(job_id, permit_data)
         
-        # 3. Верификация (если включена)
+        # 3. Верификация (если включена) — батчами параллельно (размер через PERMIT_VERIFY_BATCH_SIZE, по умолч. 6)
         owner_builders_count = 0
         verified_count = 0
+        batch_size = _verify_batch_size()
         
         if verify:
-            update_permit_job(job_id, status="verifying")
-            logger.info(f"[JOB {job_id}] Starting verification...")
+            permit_nums = [p.get("permitnum") for p in raw_permits if p.get("permitnum")]
+            update_permit_job(job_id, status="verifying", permits_found=len(permit_nums))
+            logger.info(f"[JOB {job_id}] Starting verification ({len(permit_nums)} permits, batch size {batch_size})...")
             
-            for i, permit in enumerate(raw_permits):
+            batch_start = 0
+            while batch_start < len(permit_nums):
                 check_cancelled()
-                
-                permit_num = permit.get("permitnum")
-                if not permit_num:
-                    continue
+                batch = permit_nums[batch_start : batch_start + batch_size]
+                batch_start += len(batch)
                 
                 try:
-                    result = verify_permit_sync(permit_num, headless=headless, job_id=job_id)
-                    
+                    results = asyncio.run(verify_permits_batch_async(batch, headless=headless, job_id=job_id))
+                except Exception as e:
+                    logger.error(f"[JOB {job_id}] Batch verification error: {e}")
+                    for permit_num in batch:
+                        update_permit_verification(permit_num, None, None, verification_error=str(e)[:200])
+                    verified_count += len(batch)
+                    batch_start = len(permit_nums)
+                    continue
+                
+                for result in results:
+                    permit_num = result.get("permit_num")
                     is_owner = result.get("is_owner_builder")
                     work_text = result.get("work_performer_text")
                     err = result.get("error")
                     
                     if err == "Job cancelled":
                         logger.info(f"[JOB {job_id}] Verification stopped (job cancelled)")
+                        batch_start = len(permit_nums)
                         break
                     
                     update_permit_verification(
                         permit_num, is_owner, work_text,
                         verification_error=err if err else None
                     )
-                    
-                    if err and verified_count == 0:
-                        logger.warning("[JOB %s] Verification failed (e.g. Playwright): %s", job_id, err[:80])
-                    
                     verified_count += 1
                     if is_owner:
                         owner_builders_count += 1
-                    
-                    # Обновляем статус каждые 10 записей
-                    if (i + 1) % 10 == 0:
-                        update_permit_job(
-                            job_id,
-                            permits_verified=verified_count,
-                            owner_builders_found=owner_builders_count
-                        )
-                        logger.info(f"[JOB {job_id}] Verified {verified_count}/{len(raw_permits)}")
-                    
-                    # Задержка между запросами
-                    import time
-                    time.sleep(2)
-                    
-                except Exception as e:
-                    logger.error(f"[JOB {job_id}] Error verifying {permit_num}: {e}")
-                    continue
+                
+                if any(r.get("error") == "Job cancelled" for r in results):
+                    break
+                
+                update_permit_job(
+                    job_id,
+                    permits_verified=verified_count,
+                    owner_builders_found=owner_builders_count
+                )
+                logger.info(f"[JOB {job_id}] Verified {verified_count}/{len(permit_nums)}")
+                
+                import time
+                time.sleep(VERIFY_DELAY_BETWEEN_BATCHES)
         
         # 4. Завершение (не перезаписываем status=cancelled, если джоб отменили)
         conn = get_connection()

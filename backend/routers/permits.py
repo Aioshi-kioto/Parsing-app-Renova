@@ -326,23 +326,29 @@ async def export_job(
     if not permits:
         raise HTTPException(status_code=404, detail="Пермиты не найдены")
     
-    # Конвертируем is_owner_builder и используем work_performer_text для отображения
+    export_columns = [
+        "permit_num", "permit_class", "permit_type_mapped", "permit_type_desc", "description",
+        "est_project_cost", "applied_date", "issued_date", "status_current",
+        "address", "city", "state", "zipcode", "contractor_name",
+        "owner_builder", "verification_status", "portal_link", "created_at",
+    ]
+    rows_export = []
     for p in permits:
-        # В Excel показываем work_performer_text вместо Yes/No/Unknown
-        if p.get('work_performer_text'):
-            p['is_owner_builder'] = p['work_performer_text']
-        elif p.get('is_owner_builder') is not None:
-            p['is_owner_builder'] = 'Yes' if p['is_owner_builder'] else 'No'
+        if p.get("work_performer_text"):
+            val = p["work_performer_text"]
+        elif p.get("is_owner_builder") is not None:
+            val = "Yes" if p["is_owner_builder"] else "No"
         else:
-            p['is_owner_builder'] = 'Unknown'
+            val = "Unknown"
+        rows_export.append({k: p.get(k) if k != "owner_builder" else val for k in export_columns})
     
     suffix = "_owners" if only_owners else ""
     
     if format == "csv":
         output = io.StringIO()
-        writer = csv.DictWriter(output, fieldnames=permits[0].keys())
+        writer = csv.DictWriter(output, fieldnames=export_columns, extrasaction="ignore")
         writer.writeheader()
-        writer.writerows(permits)
+        writer.writerows(rows_export)
         
         return StreamingResponse(
             iter([output.getvalue()]),
@@ -350,7 +356,7 @@ async def export_job(
             headers={"Content-Disposition": f"attachment; filename=permits_job_{job_id}{suffix}.csv"}
         )
     else:
-        return {"permits": permits, "total": len(permits)}
+        return {"permits": rows_export, "total": len(rows_export)}
 
 
 @router.get("/export")
@@ -400,7 +406,7 @@ async def export_all(
         SELECT permit_num, permit_class, permit_type_mapped, permit_type_desc, description,
                est_project_cost, applied_date, issued_date, status_current,
                address, city, state, zipcode,
-               contractor_name, is_owner_builder, verification_status, 
+               contractor_name, is_owner_builder, verification_status,
                work_performer_text, portal_link, created_at
         FROM permits
         WHERE {where}
@@ -412,23 +418,33 @@ async def export_all(
     if not permits:
         raise HTTPException(status_code=404, detail="Пермиты не найдены")
     
-    # Конвертируем is_owner_builder - показываем work_performer_text если есть
+    # Одна колонка "Owner Builder": текст из верификации (Owner/Lessee, Licensed Contractor и т.д.) или Yes/No/Unknown
+    export_columns = [
+        "permit_num", "permit_class", "permit_type_mapped", "permit_type_desc", "description",
+        "est_project_cost", "applied_date", "issued_date", "status_current",
+        "address", "city", "state", "zipcode", "contractor_name",
+        "owner_builder", "verification_status", "portal_link", "created_at",
+    ]
+    rows_export = []
     for p in permits:
-        # В Excel показываем work_performer_text вместо Yes/No/Unknown
-        if p.get('work_performer_text'):
-            p['is_owner_builder'] = p['work_performer_text']
-        elif p.get('is_owner_builder') is not None:
-            p['is_owner_builder'] = 'Yes' if p['is_owner_builder'] else 'No'
+        if p.get("work_performer_text"):
+            val = p["work_performer_text"]
+        elif p.get("is_owner_builder") is not None:
+            val = "Yes" if p["is_owner_builder"] else "No"
         else:
-            p['is_owner_builder'] = 'Unknown'
+            val = "Unknown"
+        row = {k: p.get(k) for k in export_columns if k != "owner_builder"}
+        row["owner_builder"] = val
+        # порядок колонок как в export_columns
+        rows_export.append({k: row.get(k) for k in export_columns})
     
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
     
     if format == "csv":
         output = io.StringIO()
-        writer = csv.DictWriter(output, fieldnames=permits[0].keys())
+        writer = csv.DictWriter(output, fieldnames=export_columns, extrasaction="ignore")
         writer.writeheader()
-        writer.writerows(permits)
+        writer.writerows(rows_export)
         
         return StreamingResponse(
             iter([output.getvalue()]),
@@ -437,7 +453,7 @@ async def export_all(
         )
     elif format == "xlsx":
         excel_bytes = create_formatted_excel(
-            permits,
+            rows_export,
             sheet_name="Building Permits",
             currency_columns=["est_project_cost"],
             header_bg="7C3AED",
@@ -448,7 +464,7 @@ async def export_all(
             headers={"Content-Disposition": f"attachment; filename=permits_export_{timestamp}.xlsx"}
         )
     else:
-        return {"permits": permits, "total": len(permits)}
+        return {"permits": rows_export, "total": len(rows_export)}
 
 
 @router.post("/jobs/{job_id}/cancel")
