@@ -1,0 +1,35 @@
+# Dev-среда с портами, не конфликтующими с другими проектами (Postgres 5432→5433, Redis 6379→6382).
+# Запуск: docker compose -f docker-compose.dev-ports.yml up -d
+# Подключение к БД с хоста: postgresql://renova:renova_password@localhost:5433/renova
+
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: renova
+      POSTGRES_USER: renova
+      POSTGRES_PASSWORD: renova_password
+    ports:
+      - "5433:5432"
+    volumes:
+      - postgres_data_dev:/var/lib/postgresql/data
+    restart: always
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U renova" ]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6382:6379"
+    restart: always
+    healthcheck:
+      test: [ "CMD", "redis-cli", "ping" ]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  postgres_data_dev:

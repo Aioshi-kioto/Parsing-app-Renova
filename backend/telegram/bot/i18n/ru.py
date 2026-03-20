@@ -1,0 +1,18 @@
+LEXICON_RU: dict[str, str] = {
+    'start_message': 'Привет, пользователь! Это стартовое сообщение.',
+    'help_message': 'Это справочное сообщение.',
+    'start_button_hi': 'Привет',
+    'start_button_test': 'Тест',
+    'start_button_inline': 'Инлайн кнопка',
+    'start_button_fsm': 'FSM',
+    'start_button_webapp': 'Веб-приложение',
+    'inline_prompt': 'Сообщение с инлайн-кнопкой.',
+    'inline_save_button': 'Сохранить',
+    'fsm_wait_step_1': 'Ожидаю шаг 1',
+    'fsm_wait_step_2': 'Ожидаю шаг 2',
+    'fsm_result': 'Шаг 1: {step_1}\nШаг 2: {step_2}',
+    'default_answer': 'Привет',
+    'throttled_message': 'Слишком много запросов. Пожалуйста, снизьте частоту.',
+    'webapp_message': 'Запустите пример WebApp с помощью кнопки ниже.',
+    'webapp_open_button': 'Открыть WebApp',
+}

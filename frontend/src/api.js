@@ -2,13 +2,21 @@
  * Renova Parse CRM - API Client
  * Uses Vite proxy for API calls (configured in vite.config.js)
  */
+import { getMockExportUrl, isMockMode, mockFetchApi } from './mocks/mockApi'
+
 const API_BASE = '/api'
+const USE_MOCK_API = isMockMode
+const ENABLE_MOCK_FALLBACK = import.meta.env.VITE_MOCK_FALLBACK !== 'false'
 
 // ================================
 // ОБЩИЕ ФУНКЦИИ
 // ================================
 
 async function fetchApi(endpoint, options = {}) {
+  if (USE_MOCK_API) {
+    return mockFetchApi(endpoint, options)
+  }
+
   const url = `${API_BASE}${endpoint}`
 
   try {
@@ -27,9 +35,11 @@ async function fetchApi(endpoint, options = {}) {
 
     return response.json()
   } catch (error) {
-    // Enhanced error handling for network issues
+    if (ENABLE_MOCK_FALLBACK && error instanceof TypeError && error.message.includes('fetch')) {
+      return mockFetchApi(endpoint, options)
+    }
     if (error instanceof TypeError && error.message.includes('fetch')) {
-      throw new Error(`Network error: Unable to connect to API. Please ensure the backend is running on the correct port.`)
+      throw new Error('Network error: Unable to connect to API. Please ensure the backend is running on the correct port.')
     }
     throw error
   }
@@ -148,10 +158,12 @@ export async function getZillowStats(params = {}) {
 }
 
 export function getZillowExportUrl(jobId, format = 'csv') {
+  if (USE_MOCK_API) return getMockExportUrl('zillow')
   return `${API_BASE}/zillow/export/${jobId}?format=${format}`
 }
 
 export function getZillowExportAllUrl(params = {}) {
+  if (USE_MOCK_API) return getMockExportUrl('zillow')
   const searchParams = new URLSearchParams({ format: 'csv', ...params })
   return `${API_BASE}/zillow/export?${searchParams}`
 }
@@ -206,10 +218,12 @@ export async function getOwnerBuilders(params = {}) {
 }
 
 export function getPermitExportUrl(jobId, format = 'csv', onlyOwners = false) {
+  if (USE_MOCK_API) return getMockExportUrl('permits')
   return `${API_BASE}/permits/export/${jobId}?format=${format}&only_owners=${onlyOwners}`
 }
 
 export function getPermitExportAllUrl(params = {}) {
+  if (USE_MOCK_API) return getMockExportUrl('permits')
   const searchParams = new URLSearchParams({ format: 'csv', ...params })
   return `${API_BASE}/permits/export?${searchParams}`
 }
@@ -263,6 +277,7 @@ export async function getMBPOwnerBuilders(params = {}) {
 }
 
 export function getMBPExportUrl(jobId = null, format = 'csv', onlyOwners = false) {
+  if (USE_MOCK_API) return getMockExportUrl('mbp')
   const params = new URLSearchParams({ format, only_owners: onlyOwners })
   if (jobId) params.append('job_id', jobId)
   return `${API_BASE}/mybuildingpermit/export?${params}`
@@ -313,10 +328,260 @@ export async function deleteZillowJob(jobId) {
 }
 
 // ================================
+// LEADS / TASKS API (Sprint 1)
+// ================================
+
+export async function getLeads(params = {}) {
+  const searchParams = new URLSearchParams()
+  Object.entries(params).forEach(([key, value]) => {
+    if (value !== null && value !== undefined && value !== '') {
+      searchParams.append(key, value)
+    }
+  })
+  return fetchApi(`/leads?${searchParams}`)
+}
+
+export async function getLeadStats() {
+  return fetchApi('/leads/stats')
+}
+
+export async function getPendingReviewLeads() {
+  return fetchApi('/leads/pending-review')
+}
+
+export async function updateLeadStatus(leadId, status) {
+  return fetchApi(`/leads/${leadId}/status`, {
+    method: 'PATCH',
+    body: JSON.stringify({ status })
+  })
+}
+
+export async function updateLeadNotes(leadId, notes) {
+  return fetchApi(`/leads/${leadId}/notes`, {
+    method: 'PATCH',
+    body: JSON.stringify({ notes })
+  })
+}
+
+export async function approveLead(leadId, approvedBy = 'admin', reason = '') {
+  return fetchApi(`/leads/${leadId}/approve`, {
+    method: 'POST',
+    body: JSON.stringify({ approved_by: approvedBy, reason })
+  })
+}
+
+export async function getTasksToday() {
+  return fetchApi('/tasks/today')
+}
+
+export async function snoozeTask(leadId, hours = 24) {
+  return fetchApi(`/tasks/${leadId}/snooze`, {
+    method: 'POST',
+    body: JSON.stringify({ hours })
+  })
+}
+
+export async function sendTelegramTest() {
+  return fetchApi('/telegram/test', { method: 'POST' })
+}
+
+// ================================
+// DASHBOARD OPERATIONS API
+// ================================
+
+export async function getDashboardOperations() {
+  return fetchApi('/dashboard/operations')
+}
+
+// ================================
+// JOBS API (unified)
+// ================================
+
+export async function getJobsList(params = {}) {
+  const searchParams = new URLSearchParams()
+  Object.entries(params).forEach(([key, value]) => {
+    if (value !== null && value !== undefined && value !== '') {
+      searchParams.append(key, value)
+    }
+  })
+  return fetchApi(`/jobs?${searchParams}`)
+}
+
+export async function getJobDetail(jobId, parserType = null) {
+  const params = parserType ? `?parser_type=${encodeURIComponent(parserType)}` : ''
+  return fetchApi(`/jobs/${jobId}${params}`)
+}
+
+// ================================
+// PARSER SETTINGS API
+// ================================
+
+export async function getParserSettings(parserType) {
+  return fetchApi(`/parser-settings/${parserType}`)
+}
+
+export async function updateParserSettings(parserType, payload) {
+  return fetchApi(`/parser-settings/${parserType}`, {
+    method: 'PUT',
+    body: JSON.stringify(payload)
+  })
+}
+
+export async function applyParserSettingsToNextJobs(payload) {
+  return fetchApi('/parser-settings/apply-to-next', {
+    method: 'POST',
+    body: JSON.stringify(payload)
+  })
+}
+
+// ================================
+// SCHEDULED OPERATIONS API
+// ================================
+
+export async function getScheduledOperations(params = {}) {
+  const searchParams = new URLSearchParams()
+  Object.entries(params).forEach(([key, value]) => {
+    if (value !== null && value !== undefined && value !== '') {
+      searchParams.append(key, value)
+    }
+  })
+  return fetchApi(`/scheduled-operations?${searchParams}`)
+}
+
+export async function createScheduledOperation(payload) {
+  return fetchApi('/scheduled-operations', {
+    method: 'POST',
+    body: JSON.stringify(payload)
+  })
+}
+
+export async function cancelScheduledOperation(opId, payload = {}) {
+  return fetchApi(`/scheduled-operations/${opId}/cancel`, {
+    method: 'POST',
+    body: JSON.stringify(payload)
+  })
+}
+
+export async function runScheduledOperationNow(opId) {
+  return fetchApi(`/scheduled-operations/${opId}/run-now`, {
+    method: 'POST'
+  })
+}
+
+export async function updateScheduledOperation(opId, payload) {
+  return fetchApi(`/scheduled-operations/${opId}`, {
+    method: 'PATCH',
+    body: JSON.stringify(payload)
+  })
+}
+
+// ================================
+// PROVIDER COSTS API
+// ================================
+
+export async function getProviderCostsSummary() {
+  return fetchApi('/provider-costs/summary')
+}
+
+export async function getProviderPolicies() {
+  return fetchApi('/provider-costs/policies')
+}
+
+export async function updateProviderPolicy(provider, payload) {
+  return fetchApi(`/provider-costs/policies/${provider}`, {
+    method: 'PUT',
+    body: JSON.stringify(payload)
+  })
+}
+
+export async function getProviderBudgets() {
+  return fetchApi('/provider-costs/budgets')
+}
+
+export async function updateProviderBudget(provider, payload) {
+  return fetchApi(`/provider-costs/budgets/${provider}`, {
+    method: 'PUT',
+    body: JSON.stringify(payload)
+  })
+}
+
+// ================================
+// OUTBOUND TEMPLATES API
+// ================================
+
+export async function getOutboundTemplates() {
+  return fetchApi('/outbound/templates')
+}
+
+export async function getOutboundTemplate(caseCode) {
+  return fetchApi(`/outbound/templates/${caseCode}`)
+}
+
+export async function updateOutboundTemplate(caseCode, payload) {
+  return fetchApi(`/outbound/templates/${caseCode}`, {
+    method: 'PUT',
+    body: JSON.stringify(payload)
+  })
+}
+
+export async function sendOutboundTestEmail(payload) {
+  return fetchApi('/outbound/test-email', {
+    method: 'POST',
+    body: JSON.stringify(payload)
+  })
+}
+
+export async function sendOutboundTestLob(payload) {
+  return fetchApi('/outbound/test-lob', {
+    method: 'POST',
+    body: JSON.stringify(payload)
+  })
+}
+
+// ================================
+// ANALYTICS LEADS API
+// ================================
+
+export async function getLeadsByCase() {
+  return fetchApi('/analytics/leads/by-case')
+}
+
+export async function getLeadsByPriority() {
+  return fetchApi('/analytics/leads/by-priority')
+}
+
+export async function getLeadsByStatus() {
+  return fetchApi('/analytics/leads/by-status')
+}
+
+
+export async function getOutboundStats() {
+  return fetchApi('/analytics/outbound/stats')
+}
+
+export async function getBillingStats() {
+  return fetchApi('/analytics/billing')
+}
+
+// ================================
+// SIMULATION API
+// ================================
+
+export async function runSimulation(config = {}) {
+  return fetchApi('/simulation/run', {
+    method: 'POST',
+    body: JSON.stringify(config)
+  })
+}
+
+export async function getSimulationStatus(simId) {
+  return fetchApi(`/simulation/status/${simId}`)
+}
+
+// ================================
 // LEGACY COMPATIBILITY (for existing components)
 // ================================
 
-// Aliases for backward compatibility
 export const startParse = startZillowParse
 export const getStatus = getZillowStatus
 export const getJobs = getZillowJobs

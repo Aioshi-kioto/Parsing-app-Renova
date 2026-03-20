@@ -189,11 +189,14 @@ def parse_urls(job_id: int, urls: List[str], headless: bool = False):
                 # Парсим URL для получения координат и фильтров
                 url_data = parse_zillow_url(url)
                 
+                import os
+                proxy_url_env = os.environ.get("PROXY_URL")
+                
                 # Первый запрос - с капчей
                 initial_results = search_from_url_playwright_sync(
                     zillow_url=url,
                     headless=headless,
-                    proxy_url=None,
+                    proxy_url=proxy_url_env,
                     slow_mo=800,
                     manual_mode=False,
                     wait_for_manual=False,

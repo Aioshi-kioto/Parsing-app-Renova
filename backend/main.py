@@ -2,13 +2,20 @@
 Renova Parse CRM - Main FastAPI Application
 Единый backend для парсинга Zillow и Seattle Building Permits
 """
-from fastapi import FastAPI, Request
+from fastapi import FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
 from contextlib import asynccontextmanager
+import os
 import time
 
-from database import init_database
-from routers import zillow, permits, analytics, mybuildingpermit
+try:
+    from backend.database import init_database, get_connection
+    from backend.routers import zillow, permits, analytics, mybuildingpermit, tasks, telegram
+    from backend.routers import leads, dashboard, jobs, simulation, outbound, parser_settings, scheduled_operations, provider_costs
+except ImportError:
+    from database import init_database, get_connection
+    from routers import zillow, permits, analytics, mybuildingpermit, tasks, telegram
+    from routers import leads, dashboard, jobs, simulation, outbound, parser_settings, scheduled_operations, provider_costs
 
 
 def _check_playwright():
@@ -32,8 +39,19 @@ def _check_playwright():
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """Инициализация при старте приложения"""
-    init_database()
-    print("[OK] Database initialized")
+    skip_db = os.getenv("SKIP_DB_INIT", "").strip().lower() in ("1", "true", "yes", "y")
+    if skip_db:
+        print("[WARN] SKIP_DB_INIT=1 — skipping database initialization.")
+    else:
+        try:
+            init_database()
+            print("[OK] PostgreSQL database initialized")
+        except Exception as e:
+            print(f"[WARN] Database init failed, continuing without DB. Error: {e}")
+    try:
+        await telegram.setup_telegram_bot_commands()
+    except Exception as e:
+        print(f"[WARN] Telegram command menu setup failed: {e}")
     _check_playwright()
     yield
     print("Shutting down...")
@@ -91,6 +109,16 @@ app.include_router(zillow.router, prefix="/api/zillow", tags=["Zillow"])
 app.include_router(permits.router, prefix="/api/permits", tags=["Permits"])
 app.include_router(mybuildingpermit.router, prefix="/api/mybuildingpermit", tags=["MyBuildingPermit"])
 app.include_router(analytics.router, prefix="/api/analytics", tags=["Analytics"])
+app.include_router(leads.router, prefix="/api/leads", tags=["Leads"])
+app.include_router(tasks.router, prefix="/api/tasks", tags=["Tasks"])
+app.include_router(telegram.router, prefix="/api/telegram", tags=["Telegram"])
+app.include_router(dashboard.router, prefix="/api/dashboard", tags=["Dashboard"])
+app.include_router(jobs.router, prefix="/api/jobs", tags=["Jobs"])
+app.include_router(simulation.router, prefix="/api/simulation", tags=["Simulation"])
+app.include_router(outbound.router, prefix="/api/outbound", tags=["Outbound"])
+app.include_router(parser_settings.router, prefix="/api/parser-settings", tags=["ParserSettings"])
+app.include_router(scheduled_operations.router, prefix="/api/scheduled-operations", tags=["ScheduledOperations"])
+app.include_router(provider_costs.router, prefix="/api/provider-costs", tags=["ProviderCosts"])
 
 
 @app.get("/")
@@ -105,14 +133,36 @@ async def root():
             "permits": "/api/permits",
             "mybuildingpermit": "/api/mybuildingpermit",
             "analytics": "/api/analytics",
+            "leads": "/api/leads",
+            "tasks": "/api/tasks",
+            "telegram": "/api/telegram",
         }
     }
 
 
 @app.get("/health")
 async def health_check():
-    """Проверка состояния сервиса"""
-    return {"status": "healthy"}
+    """Проверка состояния сервиса и доступности PostgreSQL."""
+    conn = None
+    try:
+        conn = get_connection()
+        cursor = conn.cursor()
+        cursor.execute("SELECT 1")
+        row = cursor.fetchone()
+        db_ok = bool(row and row[0] == 1)
+        if not db_ok:
+            raise HTTPException(status_code=503, detail={"status": "unhealthy", "db": "down"})
+        return {"status": "healthy", "db": "up"}
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(
+            status_code=503,
+            detail={"status": "unhealthy", "db": "down", "error": str(e)},
+        )
+    finally:
+        if conn is not None:
+            conn.close()
 
 
 if __name__ == "__main__":

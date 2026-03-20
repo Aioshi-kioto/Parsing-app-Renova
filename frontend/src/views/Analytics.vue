@@ -1,580 +1,318 @@
 <template>
-  <div class="space-y-6">
-    <!-- Tabs -->
-    <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-1 inline-flex">
+  <div class="space-y-5 animate-fadeIn">
+    <div>
+      <div class="text-[10px] mb-1" style="color: var(--text-muted);">/аналитика/обзор</div>
+      <h1 class="text-xl font-bold tracking-wide" style="color: var(--text-primary);">АНАЛИТИКА</h1>
+    </div>
+
+    <div class="flex gap-0 border-b" style="border-color: var(--border);">
       <button
         v-for="tab in tabs"
         :key="tab.id"
+        class="terminal-tab"
+        :class="{ active: activeTab === tab.id }"
         @click="activeTab = tab.id"
-        class="px-4 py-2 rounded-lg text-sm font-medium transition-colors"
-        :class="activeTab === tab.id 
-          ? 'bg-gray-100 text-gray-900' 
-          : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'"
       >
-        {{ tab.name }}
+        {{ tab.label }}
       </button>
     </div>
 
-    <!-- KPI Cards: для MBP — Total / Matching / Owner-builders; для остальных — стандартные -->
-    <div v-if="activeTab === 'mbp'" class="grid grid-cols-2 md:grid-cols-3 gap-4">
-      <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-4">
-        <p class="text-sm text-gray-500">Total Analyzed</p>
-        <p class="text-2xl font-bold text-gray-900">{{ stats.total || 0 }}</p>
-        <p class="text-xs text-gray-400 mt-1">Все пермиты без фильтра</p>
-      </div>
-      <div class="bg-white rounded-xl shadow-sm border border-purple-200 p-4">
-        <p class="text-sm text-purple-600">Matching Types</p>
-        <p class="text-2xl font-bold text-purple-700">{{ stats.matching_types || 0 }}</p>
-        <p class="text-xs text-gray-400 mt-1">Подходят под TARGET_CONFIG</p>
-      </div>
-      <div class="bg-white rounded-xl shadow-sm border border-purple-200 p-4">
-        <p class="text-sm text-purple-600">Owner-Builders</p>
-        <p class="text-2xl font-bold text-purple-700">{{ stats.owner_builders_from_matching || 0 }}</p>
-        <p class="text-xs text-gray-400 mt-1">Из matching types</p>
-      </div>
-    </div>
-    <div v-else class="grid grid-cols-2 md:grid-cols-4 gap-4">
-      <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-4">
-        <p class="text-sm text-gray-500">{{ activeTab === 'zillow' ? 'Total Homes' : 'Total Permits' }}</p>
-        <p class="text-2xl font-bold text-gray-900">{{ stats.total || 0 }}</p>
-      </div>
-      <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-4">
-        <p class="text-sm text-gray-500">{{ activeTab === 'zillow' ? 'Avg Price' : 'Avg Cost' }}</p>
-        <p class="text-2xl font-bold text-gray-900">{{ formatPrice(stats.avg_value) }}</p>
-      </div>
-      <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-4">
-        <p class="text-sm text-gray-500">{{ activeTab === 'zillow' ? 'Unique' : 'Owner-Builders' }}</p>
-        <p class="text-2xl font-bold text-gray-900">{{ stats.secondary || 0 }}</p>
-      </div>
-      <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-4">
-        <p class="text-sm text-gray-500">Total Value</p>
-        <p class="text-2xl font-bold text-gray-900">{{ formatPrice(stats.total_value) }}</p>
-      </div>
-    </div>
+    <!-- BILLING TAB -->
+    <template v-if="activeTab === 'billing'">
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-3">
+        <div v-for="prov in providerOrder" :key="prov" class="card p-4 relative overflow-hidden">
+          <div class="absolute top-0 right-0 p-2 opacity-10">
+            <div class="text-4xl font-bold uppercase">{{ prov[0] }}</div>
+          </div>
+          <div class="flex items-center gap-2 mb-1">
+            <span class="text-[10px] font-semibold tracking-widest uppercase" style="color: var(--text-secondary);">{{ providerLabels[prov] || prov }}</span>
+            <span v-if="prov === 'sms_beta'" class="text-[8px] px-1 py-0.5 rounded" style="background: var(--accent-yellow); color: #000;">BETA</span>
+            <span v-if="billingData[prov]?.status === 'warning'" class="text-[8px] px-1 py-0.5 rounded" style="background: var(--accent-yellow); color: #000;">ВНИМАНИЕ</span>
+            <span v-if="billingData[prov]?.status === 'over_budget'" class="text-[8px] px-1 py-0.5 rounded" style="background: var(--accent-red); color: #fff;">ПРЕВЫШЕН</span>
+          </div>
+          <div class="text-2xl font-bold mb-1" style="color: var(--text-primary);">${{ (billingData[prov]?.estimated_cost || 0).toFixed(2) }}</div>
+          <div class="text-[10px]" style="color: var(--text-muted);">расходы за месяц</div>
 
-    <!-- Charts Row -->
-    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-      <!-- Price/Cost Distribution -->
-      <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-        <h3 class="text-lg font-semibold text-gray-900 mb-4">
-          {{ activeTab === 'zillow' ? 'Price Distribution' : activeTab === 'mbp' ? 'By Jurisdiction' : 'Cost Distribution' }}
-        </h3>
-        <div class="h-64">
-          <canvas ref="distributionChart"></canvas>
+          <div class="mt-3 pt-3 border-t space-y-1" style="border-color: var(--border);">
+            <div class="flex justify-between items-center">
+              <span class="text-[10px]" style="color: var(--text-muted);">событий</span>
+              <span class="text-[10px] font-bold" style="color: var(--accent-cyan);">{{ billingData[prov]?.success_count || 0 }}</span>
+            </div>
+            <div class="flex justify-between items-center">
+              <span class="text-[10px]" style="color: var(--text-muted);">тариф</span>
+              <span class="text-[10px]" style="color: var(--text-primary);">${{ billingData[prov]?.unit_cost_usd || 0 }}/{{ billingData[prov]?.unit_name || '?' }}</span>
+            </div>
+            <div v-if="billingData[prov]?.budget_usd > 0" class="flex justify-between items-center">
+              <span class="text-[10px]" style="color: var(--text-muted);">бюджет</span>
+              <span class="text-[10px]" style="color: var(--text-primary);">
+                ${{ billingData[prov]?.remaining_usd?.toFixed(2) }} / ${{ billingData[prov]?.budget_usd?.toFixed(2) }}
+                ({{ billingData[prov]?.budget_used_pct?.toFixed(0) }}%)
+              </span>
+            </div>
+            <div v-if="billingData[prov]?.actual_sent !== undefined" class="flex justify-between items-center">
+              <span class="text-[10px]" style="color: var(--text-muted);">отправлено (БД)</span>
+              <span class="text-[10px] font-bold" style="color: var(--text-primary);">{{ billingData[prov]?.actual_sent }}</span>
+            </div>
+            <div v-if="billingData[prov]?.actual_matches !== undefined" class="flex justify-between items-center">
+              <span class="text-[10px]" style="color: var(--text-muted);">совпадений (БД)</span>
+              <span class="text-[10px] font-bold" style="color: var(--text-primary);">{{ billingData[prov]?.actual_matches }}</span>
+            </div>
+          </div>
         </div>
       </div>
 
-      <!-- Timeline -->
-      <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-        <h3 class="text-lg font-semibold text-gray-900 mb-4">Timeline</h3>
-        <div class="h-64">
-          <canvas ref="timelineChart"></canvas>
+      <div class="card p-4 bg-opacity-5" style="background-color: var(--accent-blue);">
+        <h3 class="text-[10px] font-bold uppercase mb-2" style="color: var(--accent-blue);">Заметки</h3>
+        <ul class="text-[10px] space-y-1 list-disc list-inside" style="color: var(--text-secondary);">
+          <li>Тарифы загружаются из API, можно менять через <code>/api/provider-costs/policies/{provider}</code>.</li>
+          <li>Бюджеты и лимиты — <code>/api/provider-costs/budgets/{provider}</code>.</li>
+          <li><b>Decodo:</b> расход по трафику (GB), статистика подтягивается автоматически.</li>
+          <li><b>SMS:</b> канал заморожен (TCPA). UI показан как beta, расходов нет.</li>
+        </ul>
+      </div>
+    </template>
+
+    <!-- LEAD FUNNEL TAB -->
+    <template v-if="activeTab === 'leads'">
+      <div class="grid grid-cols-2 lg:grid-cols-4 gap-3">
+        <div class="kpi-card">
+          <div class="kpi-value">{{ totalLeads }}</div>
+          <div class="kpi-label">всего лидов</div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-value" style="color: var(--accent-red);">{{ priorityCounts.RED || 0 }}</div>
+          <div class="kpi-label">высокий приоритет</div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-value" style="color: var(--accent-yellow);">{{ priorityCounts.YELLOW || 0 }}</div>
+          <div class="kpi-label">средний приоритет</div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-value" style="color: var(--accent-green);">{{ priorityCounts.GREEN || 0 }}</div>
+          <div class="kpi-label">низкий приоритет</div>
         </div>
       </div>
-    </div>
 
-    <!-- Second Row: Pie + Bar -->
-    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-      <!-- Pie Chart -->
-      <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-        <h3 class="text-lg font-semibold text-gray-900 mb-4">
-          {{ activeTab === 'zillow' ? 'Home Types' : activeTab === 'mbp' ? 'Owner-Builder Ratio' : 'Owner-Builder Ratio' }}
-        </h3>
-        <div class="h-64 flex items-center justify-center">
-          <canvas ref="pieChart"></canvas>
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        <div class="card p-4">
+          <div class="text-[10px] font-semibold tracking-widest uppercase mb-4" style="color: var(--text-secondary);">Лиды по типу кейса</div>
+          <div class="space-y-2">
+            <div v-for="c in caseData" :key="c.case_type" class="flex items-center gap-2">
+              <span class="text-[10px] w-36 truncate" style="color: var(--text-secondary);">{{ c.case_type }}</span>
+              <div class="flex-1 h-2" style="background: var(--bg-elevated);">
+                <div class="h-full transition-all" :style="{ width: barWidth(c.count, maxCaseCount) + '%', background: caseColor(c.case_type) }"></div>
+              </div>
+              <span class="text-[10px] w-8 text-right font-semibold" style="color: var(--text-primary);">{{ c.count }}</span>
+            </div>
+            <div v-if="!caseData.length" class="text-[10px] py-4 text-center" style="color: var(--text-muted);">нет данных по лидам</div>
+          </div>
+        </div>
+
+        <div class="card p-4">
+          <div class="text-[10px] font-semibold tracking-widest uppercase mb-4" style="color: var(--text-secondary);">Воронка по статусу</div>
+          <div class="space-y-1">
+            <div v-for="(s, idx) in statusFunnel" :key="s.status" class="flex items-center gap-2">
+              <span class="text-[10px] w-24" style="color: var(--text-secondary);">{{ s.status }}</span>
+              <div class="flex-1 h-3" style="background: var(--bg-elevated);">
+                <div class="h-full transition-all" :style="{ width: funnelWidth(s.count) + '%', background: funnelColor(idx) }"></div>
+              </div>
+              <span class="text-[10px] w-8 text-right font-semibold" style="color: var(--text-primary);">{{ s.count }}</span>
+            </div>
+            <div v-if="!statusFunnel.length" class="text-[10px] py-4 text-center" style="color: var(--text-muted);">нет данных</div>
+          </div>
+        </div>
+      </div>
+    </template>
+
+    <!-- OUTBOUND TAB -->
+    <template v-if="activeTab === 'outbound'">
+      <div class="grid grid-cols-2 lg:grid-cols-4 gap-3">
+        <div class="kpi-card">
+          <div class="kpi-value">{{ outbound.letters_sent || 0 }}</div>
+          <div class="kpi-label">писем отправлено (Lob)</div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-value">{{ outbound.emails_sent || 0 }}</div>
+          <div class="kpi-label">email отправлено (SendGrid)</div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-value">{{ outbound.calls_made || 0 }}</div>
+          <div class="kpi-label">звонков совершено</div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-value" style="color: var(--accent-cyan);">{{ outbound.response_rate || '0%' }}</div>
+          <div class="kpi-label">отклик</div>
         </div>
       </div>
 
-      <!-- By City/Class -->
-      <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-        <h3 class="text-lg font-semibold text-gray-900 mb-4">
-          {{ activeTab === 'zillow' ? 'Top Cities' : 'By Permit Class' }}
-        </h3>
-        <div class="h-64">
-          <canvas ref="barChart"></canvas>
+      <div class="card p-4">
+        <div class="text-[10px] font-semibold tracking-widest uppercase mb-4" style="color: var(--text-secondary);">Исходящие за 30 дней</div>
+        <div class="h-40 flex items-end gap-1">
+          <div v-for="(day, idx) in outboundTimeline" :key="idx" class="flex-1 flex flex-col items-center gap-1">
+            <div class="w-full" :style="{ height: timelineBarHeight(day.count) + 'px', background: 'var(--accent-cyan)' }"></div>
+            <span v-if="idx % 7 === 0" class="text-[8px]" style="color: var(--text-muted);">{{ day.label }}</span>
+          </div>
+          <div v-if="!outboundTimeline.length" class="text-[10px] w-full text-center py-8" style="color: var(--text-muted);">пока нет данных</div>
         </div>
       </div>
-    </div>
+    </template>
 
-    <!-- Map Section -->
-    <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-      <div class="flex items-center justify-between mb-4">
-        <h3 class="text-lg font-semibold text-gray-900">Map View</h3>
-        <div class="flex items-center gap-2">
-          <label class="flex items-center gap-2 text-sm text-gray-600">
-            <input type="checkbox" v-model="showZillowMarkers" class="rounded text-gray-900" />
-            Zillow Homes
-          </label>
-          <label class="flex items-center gap-2 text-sm text-gray-600">
-            <input type="checkbox" v-model="showPermitMarkers" class="rounded text-purple-600" />
-            Permits
-          </label>
+    <!-- PARSERS TAB -->
+    <template v-if="activeTab === 'parsers'">
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-3">
+        <div v-for="src in parserSources" :key="src.name" class="card p-4">
+          <div class="flex items-center justify-between mb-2">
+            <span class="text-[10px] font-semibold tracking-widest uppercase" style="color: var(--text-secondary);">{{ src.name }}</span>
+            <span class="badge" :class="src.last_status === 'completed' ? 'badge-green' : src.last_status === 'failed' ? 'badge-red' : 'badge-gray'">
+              {{ src.last_status || 'простой' }}
+            </span>
+          </div>
+          <div class="kpi-value mb-1">{{ src.total_records || 0 }}</div>
+          <div class="kpi-label">всего записей</div>
+          <div class="mt-3 space-y-1">
+            <div class="flex justify-between text-[10px]">
+              <span style="color: var(--text-muted);">успешность</span>
+              <span style="color: var(--text-primary);">{{ src.success_rate || '--' }}</span>
+            </div>
+            <div class="flex justify-between text-[10px]">
+              <span style="color: var(--text-muted);">последний парсинг</span>
+              <span style="color: var(--text-primary);">{{ src.last_parse || '--' }}</span>
+            </div>
+            <div class="flex justify-between text-[10px]">
+              <span style="color: var(--text-muted);">всего задач</span>
+              <span style="color: var(--text-primary);">{{ src.total_jobs || 0 }}</span>
+            </div>
+          </div>
         </div>
       </div>
-      <div ref="mapContainer" class="h-96 rounded-lg bg-gray-100"></div>
-      <p v-if="!mapInitialized" class="text-center py-8 text-gray-500">
-        Map requires Leaflet. Run: npm install leaflet @vue-leaflet/vue-leaflet
-      </p>
-    </div>
-
-    <!-- Data Summary Table -->
-    <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-      <h3 class="text-lg font-semibold text-gray-900 mb-4">
-        {{ activeTab === 'zillow' ? 'Top Cities Summary' : activeTab === 'mbp' ? 'Jurisdiction Summary' : 'Permit Class Summary' }}
-      </h3>
-      <div class="overflow-x-auto">
-        <table class="min-w-full divide-y divide-gray-200">
-          <thead>
-            <tr>
-              <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">
-                {{ activeTab === 'zillow' ? 'City' : 'Class' }}
-              </th>
-              <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Count</th>
-              <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">
-                {{ activeTab === 'zillow' ? 'Avg Price' : 'Percentage' }}
-              </th>
-            </tr>
-          </thead>
-          <tbody class="divide-y divide-gray-200">
-            <tr v-for="(item, index) in summaryData" :key="index" class="hover:bg-gray-50">
-              <td class="px-4 py-3 text-sm font-medium text-gray-900">{{ item.label }}</td>
-              <td class="px-4 py-3 text-sm text-gray-600">{{ item.count }}</td>
-              <td class="px-4 py-3 text-sm text-gray-600">
-                {{ activeTab === 'zillow' ? formatPrice(item.value) : `${item.percentage}%` }}
-              </td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
-    </div>
+    </template>
   </div>
 </template>
 
 <script setup>
-import { ref, reactive, computed, watch, onMounted, onUnmounted, nextTick } from 'vue'
-import {
-  getZillowStats, getZillowPriceDistribution, getZillowTimeline, getZillowByCity, getZillowHomeTypes,
-  getPermitStats, getPermitsCostDistribution, getPermitsTimeline, getOwnerBuilderRatio, getPermitsByClass,
-  getMapZillowHomes, getMapPermits,
-  getMBPStats
-} from '../api'
+import { ref, computed, onMounted } from 'vue'
+import { getLeadsByCase, getLeadsByPriority, getLeadsByStatus, getOutboundStats, getOverviewStats, getBillingStats } from '../api'
 
-// Tabs
 const tabs = [
-  { id: 'zillow', name: 'Zillow Analytics' },
-  { id: 'permits', name: 'Permits Analytics' },
-  { id: 'mbp', name: 'MyBuildingPermit Analytics' }
+  { id: 'leads', label: 'Лиды' },
+  { id: 'outbound', label: 'Рассылка' },
+  { id: 'parsers', label: 'Парсеры' },
+  { id: 'billing', label: 'Биллинг' },
 ]
-const activeTab = ref('zillow')
 
-// Chart refs
-const distributionChart = ref(null)
-const timelineChart = ref(null)
-const pieChart = ref(null)
-const barChart = ref(null)
-const mapContainer = ref(null)
-
-// Chart instances
-let distributionChartInstance = null
-let timelineChartInstance = null
-let pieChartInstance = null
-let barChartInstance = null
-let mapInstance = null
-const mapInitialized = ref(false)
-
-// Map markers
-const showZillowMarkers = ref(true)
-const showPermitMarkers = ref(true)
-
-// Data
-const stats = reactive({
-  total: 0,
-  avg_value: 0,
-  secondary: 0,
-  total_value: 0
-})
-
-const summaryData = ref([])
-
-// Colors
-const colors = {
-  blue: 'rgb(59, 130, 246)',
-  blueLight: 'rgba(59, 130, 246, 0.2)',
-  purple: 'rgb(147, 51, 234)',
-  purpleLight: 'rgba(147, 51, 234, 0.2)',
-  green: 'rgb(34, 197, 94)',
-  amber: 'rgb(245, 158, 11)',
-  red: 'rgb(239, 68, 68)',
-  gray: 'rgb(107, 114, 128)'
+const providerOrder = ['batchdata', 'lob', 'sendgrid', 'decodo', 'sms_beta']
+const providerLabels = {
+  batchdata: 'BatchData',
+  lob: 'Lob',
+  sendgrid: 'SendGrid',
+  decodo: 'Decodo',
+  sms_beta: 'SMS',
 }
 
-function formatPrice(value) {
-  if (!value) return '$0'
-  if (value >= 1000000) {
-    return `$${(value / 1000000).toFixed(1)}M`
-  }
-  if (value >= 1000) {
-    return `$${(value / 1000).toFixed(0)}K`
-  }
-  return `$${value.toFixed(0)}`
+const activeTab = ref('leads')
+const caseData = ref([])
+const priorityCounts = ref({})
+const statusFunnel = ref([])
+const outbound = ref({})
+const outboundTimeline = ref([])
+const parserSources = ref([])
+const billingData = ref({})
+
+const totalLeads = computed(() => caseData.value.reduce((s, c) => s + (c.count || 0), 0))
+const maxCaseCount = computed(() => Math.max(...caseData.value.map(c => c.count), 1))
+
+function barWidth(count, max) {
+  return Math.round(count / max * 100)
 }
 
-async function loadZillowData() {
-  try {
-    // Stats
-    const zillowStats = await getZillowStats()
-    stats.total = zillowStats.total || 0
-    stats.avg_value = zillowStats.avg_price || 0
-    stats.secondary = zillowStats.unique_count || 0
-    stats.total_value = (zillowStats.avg_price || 0) * (zillowStats.total || 0)
-
-    // Distribution chart
-    const distribution = await getZillowPriceDistribution(null, 8)
-    updateDistributionChart(distribution)
-
-    // Timeline chart
-    const timeline = await getZillowTimeline(30)
-    updateTimelineChart(timeline)
-
-    // Home types (pie)
-    const homeTypes = await getZillowHomeTypes()
-    updatePieChart(homeTypes)
-
-    // By city (bar)
-    const byCity = await getZillowByCity(8)
-    updateBarChart(byCity.map(c => ({ label: c.city, count: c.count, value: c.avg_price })))
-    summaryData.value = byCity.map(c => ({
-      label: c.city,
-      count: c.count,
-      value: c.avg_price,
-      percentage: 0
-    }))
-
-  } catch (error) {
-    console.error('Error loading Zillow data:', error)
-  }
+const CASE_COLORS = {
+  PERMIT_SNIPER: 'var(--accent-cyan)',
+  EMERGENCY_PLUMBING: 'var(--accent-red)',
+  HELOC_NO_PERMIT: 'var(--accent-yellow)',
+  NEW_PURCHASE_HELOC: 'var(--accent-green)',
+  MECHANICS_LIEN: '#bb88ff',
+  ESCROW_FALLOUT: 'var(--accent-blue)',
+  ELECTRICAL_REWIRE: '#66ccff',
+  STORM_ROOF_DAMAGE: '#ff8844',
 }
 
-async function loadPermitsData() {
-  try {
-    // Stats
-    const permitStats = await getPermitStats()
-    stats.total = permitStats.total || 0
-    stats.avg_value = permitStats.avg_cost || 0
-    stats.secondary = permitStats.owner_builders || 0
-    stats.total_value = permitStats.total_cost || 0
-
-    // Distribution chart
-    const distribution = await getPermitsCostDistribution(null, 8)
-    updateDistributionChart(distribution)
-
-    // Timeline chart
-    const timeline = await getPermitsTimeline(90)
-    updateTimelineChart(timeline)
-
-    // Owner-builder ratio (pie)
-    const ratio = await getOwnerBuilderRatio()
-    updatePieChart(ratio)
-
-    // By class (bar)
-    const byClass = await getPermitsByClass()
-    updateBarChart(byClass.map(c => ({ label: c.label, count: c.count })))
-    summaryData.value = byClass.map(c => ({
-      label: c.label,
-      count: c.count,
-      percentage: c.percentage
-    }))
-
-  } catch (error) {
-    console.error('Error loading Permits data:', error)
-  }
+function caseColor(caseType) {
+  return CASE_COLORS[caseType] || 'var(--accent-cyan)'
 }
 
-async function loadMBPData() {
-  try {
-    // Stats
-    const mbpStats = await getMBPStats()
-    stats.total = mbpStats.total || 0
-    stats.matching_types = mbpStats.matching_types || 0
-    stats.owner_builders_from_matching = mbpStats.owner_builders_from_matching || 0
-    stats.avg_value = 0
-    stats.secondary = mbpStats.owner_builders || 0
-    stats.total_value = 0
-
-    // By jurisdiction (bar)
-    const byJurisdiction = Object.entries(mbpStats.by_jurisdiction || {}).map(([jurisdiction, count]) => ({
-      label: jurisdiction,
-      count: count
-    }))
-    updateBarChart(byJurisdiction)
-    summaryData.value = byJurisdiction.map(j => ({
-      label: j.label,
-      count: j.count,
-      percentage: 0
-    }))
-
-    // Owner-builder ratio (pie)
-    const total = mbpStats.total || 0
-    const owners = mbpStats.owner_builders || 0
-    const contractors = total - owners
-    updatePieChart([
-      { label: 'Owner-Builder', count: owners },
-      { label: 'Licensed Contractor', count: contractors }
-    ])
-
-    // Empty charts for now (MBP doesn't have cost/timeline data)
-    updateDistributionChart([])
-    updateTimelineChart([])
-
-  } catch (error) {
-    console.error('Error loading MBP data:', error)
-  }
+function funnelWidth(count) {
+  const max = Math.max(...statusFunnel.value.map(s => s.count), 1)
+  return Math.round(count / max * 100)
 }
 
-function updateDistributionChart(data) {
-  if (!distributionChart.value) return
-  
-  const ctx = distributionChart.value.getContext('2d')
-  if (distributionChartInstance) {
-    distributionChartInstance.destroy()
-  }
+function funnelColor(idx) {
+  const colors = ['var(--accent-cyan)', 'var(--accent-blue)', 'var(--accent-yellow)', 'var(--accent-green)', '#bb88ff', 'var(--text-muted)']
+  return colors[idx % colors.length]
+}
 
-  import('chart.js').then(({ Chart, registerables }) => {
-    Chart.register(...registerables)
-    
-    distributionChartInstance = new Chart(ctx, {
-      type: 'bar',
-      data: {
-        labels: data.map(d => d.label),
-        datasets: [{
-          label: 'Count',
-          data: data.map(d => d.count),
-          backgroundColor: activeTab.value === 'zillow' ? colors.blueLight : colors.purpleLight,
-          borderColor: activeTab.value === 'zillow' ? colors.blue : colors.purple,
-          borderWidth: 1
-        }]
+function timelineBarHeight(count) {
+  const max = Math.max(...outboundTimeline.value.map(d => d.count), 1)
+  return Math.round(count / max * 120)
+}
+
+async function loadData() {
+  const results = await Promise.allSettled([
+    getLeadsByCase(),
+    getLeadsByPriority(),
+    getLeadsByStatus(),
+    getOutboundStats(),
+    getOverviewStats(),
+    getBillingStats(),
+  ])
+
+  if (results[0].status === 'fulfilled') {
+    caseData.value = results[0].value.cases || results[0].value || []
+  }
+  if (results[1].status === 'fulfilled') {
+    const d = results[1].value
+    priorityCounts.value = d.priorities || d || {}
+  }
+  if (results[2].status === 'fulfilled') {
+    statusFunnel.value = results[2].value.statuses || results[2].value || []
+  }
+  if (results[3].status === 'fulfilled') {
+    const d = results[3].value
+    outbound.value = d
+    outboundTimeline.value = d.timeline || []
+  }
+  if (results[5].status === 'fulfilled') {
+    billingData.value = results[5].value || {}
+  }
+  if (results[4].status === 'fulfilled') {
+    const stats = results[4].value
+    parserSources.value = [
+      {
+        name: 'SDCI PERMITS',
+        total_records: stats.permits?.total_permits || 0,
+        success_rate: stats.permits?.success_rate || '--',
+        last_parse: stats.permits?.last_parse || '--',
+        last_status: stats.permits?.last_status || 'idle',
+        total_jobs: stats.permits?.total_jobs || 0,
       },
-      options: {
-        responsive: true,
-        maintainAspectRatio: false,
-        plugins: { legend: { display: false } },
-        scales: {
-          y: { beginAtZero: true }
-        }
-      }
-    })
-  })
-}
-
-function updateTimelineChart(data) {
-  if (!timelineChart.value) return
-  
-  const ctx = timelineChart.value.getContext('2d')
-  if (timelineChartInstance) {
-    timelineChartInstance.destroy()
-  }
-
-  import('chart.js').then(({ Chart, registerables }) => {
-    Chart.register(...registerables)
-    
-    timelineChartInstance = new Chart(ctx, {
-      type: 'line',
-      data: {
-        labels: data.map(d => d.date),
-        datasets: [{
-          label: 'Count',
-          data: data.map(d => d.count),
-          borderColor: activeTab.value === 'zillow' ? colors.blue : colors.purple,
-          backgroundColor: activeTab.value === 'zillow' ? colors.blueLight : colors.purpleLight,
-          fill: true,
-          tension: 0.4
-        }]
+      {
+        name: 'MYBUILDINGPERMIT',
+        total_records: stats.mbp?.total_permits || 0,
+        success_rate: stats.mbp?.success_rate || '--',
+        last_parse: stats.mbp?.last_parse || '--',
+        last_status: stats.mbp?.last_status || 'idle',
+        total_jobs: stats.mbp?.total_jobs || 0,
       },
-      options: {
-        responsive: true,
-        maintainAspectRatio: false,
-        plugins: { legend: { display: false } },
-        scales: {
-          y: { beginAtZero: true }
-        }
-      }
-    })
-  })
-}
-
-function updatePieChart(data) {
-  if (!pieChart.value) return
-  
-  const ctx = pieChart.value.getContext('2d')
-  if (pieChartInstance) {
-    pieChartInstance.destroy()
-  }
-
-  import('chart.js').then(({ Chart, registerables }) => {
-    Chart.register(...registerables)
-    
-    pieChartInstance = new Chart(ctx, {
-      type: 'doughnut',
-      data: {
-        labels: data.map(d => d.label),
-        datasets: [{
-          data: data.map(d => d.count),
-          backgroundColor: [colors.blue, colors.purple, colors.green, colors.amber, colors.red, colors.gray],
-          borderWidth: 0
-        }]
+      {
+        name: 'ZILLOW',
+        total_records: stats.zillow?.total_homes || 0,
+        success_rate: stats.zillow?.success_rate || '--',
+        last_parse: stats.zillow?.last_parse || '--',
+        last_status: stats.zillow?.last_status || 'idle',
+        total_jobs: stats.zillow?.total_jobs || 0,
       },
-      options: {
-        responsive: true,
-        maintainAspectRatio: false,
-        plugins: {
-          legend: {
-            position: 'right'
-          }
-        }
-      }
-    })
-  })
-}
-
-function updateBarChart(data) {
-  if (!barChart.value) return
-  
-  const ctx = barChart.value.getContext('2d')
-  if (barChartInstance) {
-    barChartInstance.destroy()
-  }
-
-  import('chart.js').then(({ Chart, registerables }) => {
-    Chart.register(...registerables)
-    
-    barChartInstance = new Chart(ctx, {
-      type: 'bar',
-      data: {
-        labels: data.map(d => d.label),
-        datasets: [{
-          label: 'Count',
-          data: data.map(d => d.count),
-          backgroundColor: activeTab.value === 'zillow' ? colors.blue : colors.purple,
-          borderRadius: 4
-        }]
-      },
-      options: {
-        responsive: true,
-        maintainAspectRatio: false,
-        indexAxis: 'y',
-        plugins: { legend: { display: false } },
-        scales: {
-          x: { beginAtZero: true }
-        }
-      }
-    })
-  })
-}
-
-async function initMap() {
-  if (!mapContainer.value) return
-  
-  try {
-    const L = await import('leaflet')
-    await import('leaflet/dist/leaflet.css')
-    
-    // Fix default marker icons
-    delete L.Icon.Default.prototype._getIconUrl
-    L.Icon.Default.mergeOptions({
-      iconRetinaUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-icon-2x.png',
-      iconUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-icon.png',
-      shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-shadow.png'
-    })
-    
-    mapInstance = L.map(mapContainer.value).setView([47.6062, -122.3321], 10)
-    
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-      attribution: '&copy; OpenStreetMap contributors'
-    }).addTo(mapInstance)
-    
-    mapInitialized.value = true
-    await loadMapMarkers()
-  } catch (error) {
-    console.error('Error initializing map:', error)
-    mapInitialized.value = false
+    ]
   }
 }
 
-async function loadMapMarkers() {
-  if (!mapInstance) return
-  
-  try {
-    const L = await import('leaflet')
-    
-    // Clear existing markers
-    mapInstance.eachLayer(layer => {
-      if (layer instanceof L.Marker) {
-        mapInstance.removeLayer(layer)
-      }
-    })
-    
-    // Load and add markers
-    if (showZillowMarkers.value) {
-      const zillowData = await getMapZillowHomes(null, 200)
-      zillowData.markers?.forEach(m => {
-        if (m.latitude && m.longitude) {
-          const marker = L.marker([m.latitude, m.longitude])
-            .bindPopup(`<b>${m.title}</b><br>${m.address || 'N/A'}`)
-          marker.addTo(mapInstance)
-        }
-      })
-    }
-    
-    if (showPermitMarkers.value) {
-      const permitData = await getMapPermits(null, null, 200)
-      permitData.markers?.forEach(m => {
-        if (m.latitude && m.longitude) {
-          const marker = L.marker([m.latitude, m.longitude], {
-            icon: L.divIcon({
-              className: 'bg-gray-900 w-3 h-3 rounded-full border-2 border-white',
-              iconSize: [12, 12]
-            })
-          }).bindPopup(`<b>${m.title}</b><br>${m.address || 'N/A'}`)
-          marker.addTo(mapInstance)
-        }
-      })
-    }
-  } catch (error) {
-    console.error('Error loading map markers:', error)
-  }
-}
-
-watch(activeTab, async () => {
-  await nextTick()
-  if (activeTab.value === 'zillow') {
-    await loadZillowData()
-  } else if (activeTab.value === 'mbp') {
-    await loadMBPData()
-  } else {
-    await loadPermitsData()
-  }
-})
-
-watch([showZillowMarkers, showPermitMarkers], () => {
-  if (mapInitialized.value) {
-    loadMapMarkers()
-  }
-})
-
-onMounted(async () => {
-  await loadZillowData()
-  await initMap()
-})
-
-onUnmounted(() => {
-  if (distributionChartInstance) distributionChartInstance.destroy()
-  if (timelineChartInstance) timelineChartInstance.destroy()
-  if (pieChartInstance) pieChartInstance.destroy()
-  if (barChartInstance) barChartInstance.destroy()
-  if (mapInstance) mapInstance.remove()
-})
+onMounted(loadData)
 </script>
-
-<style>
-@import 'leaflet/dist/leaflet.css';
-</style>

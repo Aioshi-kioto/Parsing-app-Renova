@@ -17,10 +17,18 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
 from database import get_connection, dict_factory, create_permit_job, update_permit_job
-from models import (
-    PermitParseRequest, PermitJobStatus, PermitJobListItem,
-    Permit, PermitsResponse, PermitStats
+from schemas import (
+    PermitParseRequest,
+    PermitJobStatus,
+    PermitJobListItem,
+    Permit,
+    PermitsResponse,
+    PermitStats,
 )
+try:
+    from backend.core.parser_settings_store import get_parser_settings
+except ImportError:
+    from core.parser_settings_store import get_parser_settings
 
 router = APIRouter()
 
@@ -43,30 +51,40 @@ async def start_parse(request: PermitParseRequest):
                    f"verify={request.verify_owner_builder}")
         print(f"[PERMITS API] Logger initialized")
         
+        defaults = get_parser_settings("permit").get("config", {})
+        effective_year = request.year if request.year is not None else defaults.get("year", 2026)
+        effective_month = request.month if request.month is not None else defaults.get("month")
+        effective_permit_class = request.permit_class if request.permit_class is not None else defaults.get("permit_class")
+        effective_min_cost = request.min_cost if request.min_cost is not None else defaults.get("min_cost", 5000)
+        effective_headless = request.headless if request.headless is not None else not defaults.get("browser_visible", True)
+
+        # Для Seattle owner-builder проверка фиксируется как включенная.
+        verify_owner_builder = True
+
         # Нормализуем permit_class (пустая строка -> None)
-        permit_class = request.permit_class if request.permit_class and request.permit_class.strip() else None
+        permit_class = effective_permit_class if effective_permit_class and str(effective_permit_class).strip() else None
         print(f"[PERMITS API] Normalized permit_class: {permit_class}")
         
         print(f"[PERMITS API] Creating permit job...")
         job_id = create_permit_job(
-            year=request.year,
+            year=effective_year,
             permit_class=permit_class,
-            min_cost=request.min_cost
+            min_cost=effective_min_cost
         )
         print(f"[PERMITS API] OK Created permit job {job_id}")
         logger.info(f"Created permit job {job_id}")
         
         print(f"[PERMITS API] Importing start_permit_parse_job...")
-        from services.permit_parser import start_permit_parse_job
+        from services.parsers.permit_parser import start_permit_parse_job
         print(f"[PERMITS API] Starting permit parse job in background...")
         start_permit_parse_job(
             job_id=job_id,
-            year=request.year,
-            month=request.month,
+            year=effective_year,
+            month=effective_month,
             permit_class=permit_class,
-            min_cost=request.min_cost,
-            verify=request.verify_owner_builder,
-            headless=request.headless
+            min_cost=effective_min_cost,
+            verify=verify_owner_builder,
+            headless=effective_headless
         )
         print(f"[PERMITS API] OK Started permit parse job {job_id} in background thread")
         logger.info(f"Started permit parse job {job_id}")
@@ -74,8 +92,8 @@ async def start_parse(request: PermitParseRequest):
         result = {
             "job_id": job_id,
             "status": "started",
-            "year": request.year,
-            "month": request.month,
+            "year": effective_year,
+            "month": effective_month,
             "permit_class": permit_class
         }
         print(f"[PERMITS API] ===== Request completed successfully =====\n")
@@ -174,7 +192,7 @@ async def get_permits(
         params.append(f"%{permit_class.lower()}%")
     if is_owner_builder is not None:
         conditions.append("p.is_owner_builder = ?")
-        params.append(1 if is_owner_builder else 0)
+        params.append(is_owner_builder)
     if verification_status:
         conditions.append("p.verification_status = ?")
         params.append(verification_status)
@@ -247,8 +265,8 @@ async def get_stats(
     cursor.execute(f"""
         SELECT 
             COUNT(*) as total,
-            SUM(CASE WHEN is_owner_builder = 1 THEN 1 ELSE 0 END) as owner_builders,
-            SUM(CASE WHEN is_owner_builder = 0 THEN 1 ELSE 0 END) as contractors,
+            SUM(CASE WHEN is_owner_builder = true THEN 1 ELSE 0 END) as owner_builders,
+            SUM(CASE WHEN is_owner_builder = false THEN 1 ELSE 0 END) as contractors,
             SUM(CASE WHEN is_owner_builder IS NULL THEN 1 ELSE 0 END) as unknown
         FROM permits
         WHERE {where}
@@ -308,7 +326,7 @@ async def export_job(
     conn.row_factory = dict_factory
     cursor = conn.cursor()
     
-    owner_filter = "AND is_owner_builder = 1" if only_owners else ""
+    owner_filter = "AND is_owner_builder = true" if only_owners else ""
     
     cursor.execute(f"""
         SELECT permit_num, permit_class, permit_type_mapped, permit_type_desc, description,
@@ -380,7 +398,7 @@ async def export_all(
     
     if is_owner_builder is not None:
         conditions.append("is_owner_builder = ?")
-        params.append(1 if is_owner_builder else 0)
+        params.append(is_owner_builder)
     if min_cost is not None:
         conditions.append("est_project_cost >= ?")
         params.append(min_cost)
@@ -397,7 +415,7 @@ async def export_all(
         conditions.append("(permit_num LIKE ? OR address LIKE ? OR description LIKE ?)")
         params.extend([f"%{search}%", f"%{search}%", f"%{search}%"])
     if year:
-        conditions.append("strftime('%Y', applied_date) = ?")
+        conditions.append("EXTRACT(YEAR FROM applied_date::date) = ?")
         params.append(str(year))
     
     where = " AND ".join(conditions) if conditions else "1=1"

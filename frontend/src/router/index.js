@@ -8,6 +8,8 @@ const router = createRouter({
       name: 'dashboard',
       component: () => import('../views/Dashboard.vue')
     },
+    { path: '/jobs', redirect: '/' },
+    { path: '/calls', redirect: '/leads' },
     {
       path: '/zillow',
       name: 'zillow',
@@ -34,9 +36,14 @@ const router = createRouter({
       component: () => import('../views/MyBuildingPermit.vue')
     },
     {
-      path: '/email',
-      name: 'email',
-      component: () => import('../views/EmailDistribution.vue')
+      path: '/templates',
+      name: 'templates',
+      component: () => import('../views/TemplatesTest.vue')
+    },
+    {
+      path: '/leads',
+      name: 'leads',
+      component: () => import('../views/LeadPipeline.vue')
     }
   ]
 })

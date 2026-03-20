@@ -11,7 +11,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
 from database import get_connection, dict_factory, get_overview_stats
-from models import (
+from schemas import (
     OverviewStats, TimelineDataPoint, DistributionDataPoint,
     CityStats, MapMarker, MapDataResponse
 )
@@ -271,8 +271,8 @@ async def permits_owner_builder_ratio(job_id: Optional[int] = None):
     
     cursor.execute(f"""
         SELECT 
-            SUM(CASE WHEN is_owner_builder = 1 THEN 1 ELSE 0 END) as owners,
-            SUM(CASE WHEN is_owner_builder = 0 THEN 1 ELSE 0 END) as contractors,
+            SUM(CASE WHEN is_owner_builder = true THEN 1 ELSE 0 END) as owners,
+            SUM(CASE WHEN is_owner_builder = false THEN 1 ELSE 0 END) as contractors,
             SUM(CASE WHEN is_owner_builder IS NULL THEN 1 ELSE 0 END) as unknown
         FROM permits {job_filter}
     """)
@@ -522,3 +522,111 @@ async def map_combined(
         markers=markers,
         center={"lat": avg_lat, "lng": avg_lng}
     )
+
+
+# ================================
+# LEADS ANALYTICS
+# ================================
+
+@router.get("/leads/by-case")
+async def leads_by_case():
+    """Count leads grouped by case_type."""
+    conn = get_connection()
+    conn.row_factory = dict_factory
+    cursor = conn.cursor()
+    try:
+        cursor.execute("SELECT case_type, COUNT(*) as count FROM leads GROUP BY case_type ORDER BY count DESC")
+        rows = cursor.fetchall()
+    except Exception:
+        rows = []
+    finally:
+        conn.close()
+    return {"cases": rows}
+
+
+@router.get("/leads/by-priority")
+async def leads_by_priority():
+    """Count leads grouped by priority."""
+    conn = get_connection()
+    conn.row_factory = dict_factory
+    cursor = conn.cursor()
+    try:
+        cursor.execute("SELECT priority, COUNT(*) as count FROM leads GROUP BY priority")
+        rows = cursor.fetchall()
+        priorities = {r["priority"]: r["count"] for r in rows}
+    except Exception:
+        priorities = {}
+    finally:
+        conn.close()
+    return {"priorities": priorities}
+
+
+@router.get("/leads/by-status")
+async def leads_by_status():
+    """Count leads grouped by status for funnel visualization."""
+    conn = get_connection()
+    conn.row_factory = dict_factory
+    cursor = conn.cursor()
+    status_order = ["new", "pending_review", "approved", "letter_sent", "email_sent", "contacted", "no_answer", "closed"]
+    try:
+        cursor.execute("SELECT status, COUNT(*) as count FROM leads GROUP BY status")
+        rows = cursor.fetchall()
+        status_map = {r["status"]: r["count"] for r in rows}
+    except Exception:
+        status_map = {}
+    finally:
+        conn.close()
+    statuses = [{"status": s, "count": status_map.get(s, 0)} for s in status_order]
+    return {"statuses": statuses}
+
+
+@router.get("/outbound/stats")
+async def outbound_stats():
+    """Outbound statistics: letters, emails, calls."""
+    conn = get_connection()
+    conn.row_factory = dict_factory
+    cursor = conn.cursor()
+    letters_count = 0
+    emails_count = 0
+    calls_count = 0
+    try:
+        cursor.execute("SELECT COUNT(*) as cnt FROM leads WHERE sent_lob_at IS NOT NULL")
+        r = cursor.fetchone()
+        if r:
+            letters_count = r["cnt"]
+        cursor.execute("SELECT COUNT(*) as cnt FROM leads WHERE sent_sendgrid_at IS NOT NULL")
+        r = cursor.fetchone()
+        if r:
+            emails_count = r["cnt"]
+        cursor.execute("SELECT COUNT(*) as cnt FROM leads WHERE status = 'contacted'")
+        r = cursor.fetchone()
+        if r:
+            calls_count = r["cnt"]
+    except Exception:
+        pass
+    finally:
+        conn.close()
+    total_outbound = letters_count + emails_count + calls_count
+    rate = f"{round(calls_count / total_outbound * 100)}%" if total_outbound > 0 else "0%"
+    return {
+        "letters_sent": letters_count,
+        "emails_sent": emails_count,
+        "calls_made": calls_count,
+        "response_rate": rate,
+        "timeline": [],
+    }
+
+@router.get("/billing")
+async def get_billing_stats():
+    """
+    Billing and usage statistics for external services.
+    Delegates to cost_service for policy-aware calculation.
+    """
+    try:
+        from services.cost_service import get_billing_summary
+    except ImportError:
+        from backend.services.cost_service import get_billing_summary
+    try:
+        return get_billing_summary()
+    except Exception as e:
+        return {"error": str(e)}

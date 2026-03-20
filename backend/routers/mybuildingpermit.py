@@ -16,10 +16,19 @@ sys.path.insert(0, str(Path(__file__).parent.parent))
 
 from database import get_connection, dict_factory, create_mbp_job, update_mbp_job, insert_mbp_permit
 from utils.excel_export import create_formatted_excel
-from models import (
-    MBPParseRequest, MBPJobStatus, MBPJobListItem,
-    MBPPermit, MBPPermitsResponse, MBPStats, MBP_JURISDICTIONS
+from schemas import (
+    MBPParseRequest,
+    MBPJobStatus,
+    MBPJobListItem,
+    MBPPermit,
+    MBPPermitsResponse,
+    MBPStats,
+    MBP_JURISDICTIONS,
 )
+try:
+    from backend.core.parser_settings_store import get_parser_settings
+except ImportError:
+    from core.parser_settings_store import get_parser_settings
 
 router = APIRouter()
 
@@ -39,15 +48,20 @@ async def start_parse(request: MBPParseRequest):
     print(f"[MBP API] Limit per city: {request.limit_per_city or 'unlimited'}")
     
     try:
+        defaults = get_parser_settings("mybuilding").get("config", {})
+        request_jurisdictions = request.jurisdictions if request.jurisdictions else defaults.get("jurisdictions", [])
+        request_days_back = request.days_back if request.days_back is not None else defaults.get("days_back", 7)
+        request_headless = request.headless if request.headless is not None else not defaults.get("browser_visible", True)
+
         # Валидация юрисдикций
-        valid_jurisdictions = [j for j in request.jurisdictions if j in MBP_JURISDICTIONS]
+        valid_jurisdictions = [j for j in request_jurisdictions if j in MBP_JURISDICTIONS]
         if not valid_jurisdictions:
             raise HTTPException(status_code=400, detail="Нет валидных юрисдикций")
         
         # Создаём задачу
         job_id = create_mbp_job(
             jurisdictions=valid_jurisdictions,
-            days_back=request.days_back
+            days_back=request_days_back
         )
         print(f"[MBP API] Created job {job_id}")
         
@@ -56,14 +70,14 @@ async def start_parse(request: MBPParseRequest):
         update_mbp_job(job_id, status="running", current_jurisdiction="Initializing browser...")
         
         # Запускаем парсинг в фоне
-        from services.mybuildingpermit_parser import start_mbp_parse_job
-        print(f"[MBP API] Starting parse job {job_id} with headless={request.headless} (browser visible when False)")
+        from services.parsers.mybuildingpermit_parser import start_mbp_parse_job
+        print(f"[MBP API] Starting parse job {job_id} with headless={request_headless} (browser visible when False)")
         start_mbp_parse_job(
             job_id=job_id,
             jurisdictions=valid_jurisdictions,
-            days_back=request.days_back,
+            days_back=request_days_back,
             limit_per_city=request.limit_per_city,
-            headless=request.headless
+            headless=request_headless
         )
         print(f"[MBP API] Started parse job {job_id} in background")
         
@@ -71,7 +85,7 @@ async def start_parse(request: MBPParseRequest):
             "job_id": job_id,
             "status": "started",
             "jurisdictions": valid_jurisdictions,
-            "days_back": request.days_back
+            "days_back": request_days_back
         }
         
     except Exception as e:
@@ -199,16 +213,16 @@ async def get_stats(job_id: Optional[int] = None):
     cursor.execute(f"SELECT COUNT(*) FROM mbp_permits {where}")
     total = cursor.fetchone()[0]
     
-    cursor.execute(f"SELECT COUNT(*) FROM mbp_permits {where} {'AND' if where else 'WHERE'} COALESCE(matches_target_type, 0) = 1")
+    cursor.execute(f"SELECT COUNT(*) FROM mbp_permits {where} {'AND' if where else 'WHERE'} COALESCE(matches_target_type, false) = true")
     matching_types = cursor.fetchone()[0]
     
     cursor.execute(f"""
         SELECT COUNT(*) FROM mbp_permits {where}
-        {'AND' if where else 'WHERE'} COALESCE(matches_target_type, 0) = 1 AND is_owner_builder = 1
+        {'AND' if where else 'WHERE'} COALESCE(matches_target_type, false) = true AND is_owner_builder = true
     """)
     owner_builders_from_matching = cursor.fetchone()[0]
     
-    cursor.execute(f"SELECT COUNT(*) FROM mbp_permits {where} {'AND' if where else 'WHERE'} is_owner_builder = 1")
+    cursor.execute(f"SELECT COUNT(*) FROM mbp_permits {where} {'AND' if where else 'WHERE'} is_owner_builder = true")
     owner_builders = cursor.fetchone()[0]
     
     cursor.execute(f"""
@@ -326,7 +340,7 @@ async def export_permits(
         conditions.append("job_id = ?")
         params.append(job_id)
     if only_owners:
-        conditions.append("is_owner_builder = 1")
+        conditions.append("is_owner_builder = true")
     
     where = " AND ".join(conditions) if conditions else "1=1"
     

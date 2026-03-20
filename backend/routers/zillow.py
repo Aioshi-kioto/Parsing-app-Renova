@@ -73,7 +73,7 @@ async def start_parse(request: ZillowParseRequest):
     job_id = create_zillow_job(valid_urls)
     
     # Импортируем и запускаем парсер
-    from services.zillow_parser import start_zillow_parse_job
+    from services.parsers.zillow_parser import start_zillow_parse_job
     start_zillow_parse_job(job_id, valid_urls, headless=request.headless)
     
     return {"job_id": job_id, "status": "started", "total_urls": len(valid_urls)}

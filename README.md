@@ -67,7 +67,10 @@ The script will:
 1. Check Python and Node.js
 2. Install dependencies (pip + npm) if missing
 3. Install Playwright (Chromium) for Owner-Builder verification
-4. Start backend (port 8000) and frontend (port 5173)
+4. Start backend (first free port 8000–8011) and frontend (port 5173)
+
+If port 8000 is busy (e.g. WinError 10013 on Windows), the next free port is used automatically.  
+Для тестов BatchData Skip Trace: `cd test/test_batchdata && python test_skip_trace.py`
 
 ### Stopping and restarting
 
@@ -143,6 +146,35 @@ renova-parse-app/
 | `python start.py --skip-install` | Start without installing dependencies |
 | `npm start` | Same as `python start.py` |
 
+### Telegram bot local testing (Long Polling)
+
+For local bot testing without webhooks:
+
+```bash
+# 1) Start infra required by /stats, /pending, /queue
+docker compose -f docker-compose.dev-ports.yml up -d db redis
+
+# 2) Run bot (Windows-safe UTF-8 mode)
+python -X utf8 run_bot.py
+```
+
+Available bot commands:
+
+- `/start` - Welcome message
+- `/help` - Commands list
+- `/demo` - Sends all notification templates
+- `/stats` - Daily summary from DB
+- `/pending` - Leads pending review
+- `/queue` - Morning mailing queue snapshot
+- `/parsers` - Parser controls (beta/stub)
+
+Notes:
+
+- `run_bot.py` uses Long Polling (no webhook tunnel required).
+- Bot authorization is controlled by `TELEGRAM_CHAT_ID` in `.env`.
+- Buttons use `FRONTEND_URL`; if not set, fallback is `https://google.com`.
+- Command menu in Telegram is published via Bot API (`setMyCommands`) at bot startup.
+
 ### Manual start (separate terminals)
 
 ```bash
@@ -168,6 +200,30 @@ npm run dev
 | Backend API| http://localhost:8000 |
 | API Docs (Swagger) | http://localhost:8000/docs |
 | ReDoc      | http://localhost:8000/redoc |
+
+---
+
+## Ports and Compose profiles
+
+Two compose variants are present and they use different host ports:
+
+| Profile | Postgres | Redis | File |
+|--------|----------|-------|------|
+| Dev isolated ports | `localhost:5433` | `localhost:6382` | `docker-compose.dev-ports.yml` |
+| Default dev/prod style | `localhost:5432` | `localhost:6379` | `docker-compose.dev.yml`, `docker-compose.prod.yml` |
+
+Important:
+
+- Keep `.env` aligned with the compose profile you start.
+- If you run `docker-compose.dev-ports.yml`, recommended values are:
+  - `DATABASE_URL=postgresql://...@localhost:5433/...`
+  - `REDIS_URL=redis://localhost:6382/0`
+
+Check running mappings:
+
+```bash
+docker compose -f docker-compose.dev-ports.yml ps
+```
 
 ---
 

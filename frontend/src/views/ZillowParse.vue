@@ -10,8 +10,8 @@
           <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
           <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
         </svg>
-        <p class="text-gray-700 font-medium">Starting Zillow parse...</p>
-        <p class="text-sm text-gray-500">Preparing to fetch {{ validUrls.length }} URL(s)</p>
+        <p class="text-gray-700 font-medium">Запуск парсинга Zillow...</p>
+        <p class="text-sm text-gray-500">Подготовка к загрузке {{ validUrls.length }} URL</p>
       </div>
     </div>
     <!-- Input Section -->
@@ -52,9 +52,9 @@ https://www.zillow.com/seattle-wa/sold/?searchQueryState=..."
         <div class="flex items-center gap-6">
           <div class="text-sm text-gray-500">
             <span v-if="validUrls.length > 0" class="text-green-600 font-medium">
-              {{ validUrls.length }} valid URL{{ validUrls.length > 1 ? 's' : '' }} detected
+              Найдено {{ validUrls.length }} URL
             </span>
-            <span v-else>Enter Zillow URLs to start parsing</span>
+            <span v-else>Введите URL Zillow для запуска парсинга</span>
           </div>
           <label class="relative inline-flex items-center cursor-pointer flex-shrink-0">
             <input 
@@ -64,7 +64,7 @@ https://www.zillow.com/seattle-wa/sold/?searchQueryState=..."
             />
             <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-gray-400 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-gray-900"></div>
             <span class="ml-2 text-sm text-gray-600 whitespace-nowrap">
-              {{ headless ? 'Headless' : 'Browser visible' }}
+              {{ headless ? 'Без окна браузера' : 'Браузер виден' }}
             </span>
           </label>
         </div>
@@ -78,14 +78,14 @@ https://www.zillow.com/seattle-wa/sold/?searchQueryState=..."
             <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
             <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
           </svg>
-          {{ currentJobId ? 'Parsing...' : 'Start Parsing' }}
+          {{ currentJobId ? 'Парсинг...' : 'Запустить парсинг' }}
         </button>
       </div>
     </div>
 
     <!-- Status Section -->
     <div v-if="currentStatus" class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-      <h2 class="text-lg font-semibold text-gray-900 mb-4">Current Parse Status</h2>
+      <h2 class="text-lg font-semibold text-gray-900 mb-4">Текущий статус парсинга</h2>
       
       <div class="space-y-4">
         <div class="flex items-center gap-4 flex-wrap">
@@ -106,7 +106,7 @@ https://www.zillow.com/seattle-wa/sold/?searchQueryState=..."
         <!-- Progress -->
         <div>
           <div class="flex justify-between text-sm mb-1">
-            <span class="text-gray-600">Progress</span>
+            <span class="text-gray-600">Прогресс</span>
             <span class="text-gray-900 font-medium">
               {{ currentStatus.current_url_index + 1 }} / {{ currentStatus.total_urls }} URLs
             </span>
@@ -122,11 +122,11 @@ https://www.zillow.com/seattle-wa/sold/?searchQueryState=..."
         <!-- Stats -->
         <div class="grid grid-cols-2 gap-4">
           <div class="bg-gray-50 rounded-lg p-3">
-            <p class="text-sm text-gray-500">Homes Found</p>
+            <p class="text-sm text-gray-500">Найдено домов</p>
             <p class="text-xl font-bold text-gray-900">{{ currentStatus.homes_found }}</p>
           </div>
           <div class="bg-gray-50 rounded-lg p-3">
-            <p class="text-sm text-gray-500">Unique Homes</p>
+            <p class="text-sm text-gray-500">Уникальных</p>
             <p class="text-xl font-bold text-gray-900">{{ currentStatus.unique_homes }}</p>
           </div>
         </div>
@@ -140,12 +140,12 @@ https://www.zillow.com/seattle-wa/sold/?searchQueryState=..."
     <!-- History Section -->
     <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
       <div class="flex items-center justify-between mb-4">
-        <h2 class="text-lg font-semibold text-gray-900">Parse History</h2>
+        <h2 class="text-lg font-semibold text-gray-900">История парсинга</h2>
         <button 
           @click="loadJobs"
           class="text-sm text-gray-900 hover:text-black"
         >
-          Refresh
+          Обновить
         </button>
       </div>
 
@@ -168,13 +168,13 @@ https://www.zillow.com/seattle-wa/sold/?searchQueryState=..."
         <table class="min-w-full divide-y divide-gray-200">
           <thead>
             <tr>
-              <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Job ID</th>
-              <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
-              <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">URLs</th>
-              <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Homes</th>
-              <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Duration</th>
-              <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Date</th>
-              <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Actions</th>
+              <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">ID</th>
+              <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Статус</th>
+              <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">URL</th>
+              <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Дома</th>
+              <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Длительность</th>
+              <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Дата</th>
+              <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Действия</th>
             </tr>
           </thead>
           <tbody class="divide-y divide-gray-200">

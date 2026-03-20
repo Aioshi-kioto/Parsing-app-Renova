@@ -139,14 +139,14 @@ def install_playwright():
         print(f"{Colors.FAIL}[Backend]{Colors.ENDC} Failed to install Chromium: {e}")
         return False
 
-def find_free_port(start=8000, max_tries=5):
-    """Find first available port."""
+def find_free_port(start=8000, max_tries=12):
+    """Find first available port (8000..8011). On Windows use 127.0.0.1 to avoid WinError 10013."""
     import socket
     for i in range(max_tries):
         port = start + i
         try:
             with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
-                s.bind(("", port))
+                s.bind(("127.0.0.1", port))
                 return port
         except OSError:
             continue
@@ -156,6 +156,7 @@ def start_backend():
     """Start the FastAPI backend server (tries ports 8000-8004 if busy)."""
     backend_dir = Path(__file__).parent / "backend"
     port = find_free_port(8000)
+    env = os.environ.copy()
     
     print(f"{Colors.BLUE}[Backend]{Colors.ENDC} Starting FastAPI on http://localhost:{port}")
     
@@ -173,7 +174,8 @@ def start_backend():
         stdout=subprocess.PIPE,
         stderr=subprocess.STDOUT,
         text=True,
-        bufsize=1
+        bufsize=1,
+        env=env,
     )
     
     return process, port
@@ -215,6 +217,7 @@ def main():
     parser.add_argument("--backend", action="store_true", help="Start only backend")
     parser.add_argument("--frontend", action="store_true", help="Start only frontend")
     parser.add_argument("--skip-install", action="store_true", help="Skip dependency installation")
+    parser.add_argument("--no-db", action="store_true", help="Skip DB init (for UI preview)")
     args = parser.parse_args()
     
     # Default to both if neither specified
@@ -222,6 +225,9 @@ def main():
     
     print_banner()
     
+    if args.no_db:
+        os.environ["SKIP_DB_INIT"] = "1"
+
     # Check requirements
     errors = check_requirements()
     if errors:

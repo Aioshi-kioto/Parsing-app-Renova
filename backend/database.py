@@ -1,261 +1,126 @@
 """
 Единая база данных для Renova Parse CRM
-SQLite с таблицами для Zillow и Permits парсеров
+Sprint 2.5: Переведено с sqlite3 на SQLAlchemy + PostgreSQL.
+Роутеры продолжают использовать тот же API (get_connection, dict_factory).
 """
-import sqlite3
 import json
+import logging
 from pathlib import Path
 from typing import Optional, Dict, Any, List
 from datetime import datetime
 
-DB_PATH = Path(__file__).parent / "data" / "renova_crm.db"
+from sqlalchemy import text
+
+try:
+    from backend.database_setup import SessionLocal, engine, init_sqlalchemy_database
+except Exception:
+    from database_setup import SessionLocal, engine, init_sqlalchemy_database
+
+logger = logging.getLogger(__name__)
 
 
-def init_database():
-    """Инициализация базы данных со всеми таблицами"""
-    DB_PATH.parent.mkdir(parents=True, exist_ok=True)
-    
-    conn = sqlite3.connect(str(DB_PATH))
-    cursor = conn.cursor()
-    
-    # ===============================
-    # ZILLOW ТАБЛИЦЫ
-    # ===============================
-    
-    # Таблица zillow_jobs - задачи парсинга Zillow
-    cursor.execute("""
-        CREATE TABLE IF NOT EXISTS zillow_jobs (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            urls TEXT NOT NULL,
-            status TEXT NOT NULL DEFAULT 'pending',
-            current_url_index INTEGER DEFAULT 0,
-            total_urls INTEGER NOT NULL,
-            homes_found INTEGER DEFAULT 0,
-            unique_homes INTEGER DEFAULT 0,
-            error_message TEXT,
-            started_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-            completed_at DATETIME
-        )
-    """)
-    
-    # Таблица zillow_homes - дома из Zillow
-    cursor.execute("""
-        CREATE TABLE IF NOT EXISTS zillow_homes (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            job_id INTEGER NOT NULL,
-            zpid TEXT NOT NULL,
-            address TEXT,
-            city TEXT,
-            state TEXT,
-            zipcode TEXT,
-            price REAL,
-            price_formatted TEXT,
-            beds INTEGER,
-            baths REAL,
-            area_sqft INTEGER,
-            lot_size REAL,
-            year_built INTEGER,
-            home_type TEXT,
-            latitude REAL,
-            longitude REAL,
-            date_sold TEXT,
-            sold_date_text TEXT,
-            zestimate REAL,
-            tax_assessed_value REAL,
-            has_image INTEGER,
-            detail_url TEXT,
-            raw_data TEXT,
-            created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-            FOREIGN KEY (job_id) REFERENCES zillow_jobs(id),
-            UNIQUE(zpid)
-        )
-    """)
-    
-    # Миграция: добавить новые колонки если таблица уже существует
-    for col, col_type in [
-        ("price_formatted", "TEXT"),
-        ("date_sold", "TEXT"),
-        ("sold_date_text", "TEXT"),
-        ("zestimate", "REAL"),
-        ("tax_assessed_value", "REAL"),
-        ("has_image", "INTEGER"),
-        ("detail_url", "TEXT"),
-    ]:
-        try:
-            cursor.execute(f"ALTER TABLE zillow_homes ADD COLUMN {col} {col_type}")
-        except sqlite3.OperationalError:
-            pass  # колонка уже есть
-    
-    # ===============================
-    # PERMIT ТАБЛИЦЫ
-    # ===============================
-    
-    # Таблица permit_jobs - задачи парсинга пермитов
-    cursor.execute("""
-        CREATE TABLE IF NOT EXISTS permit_jobs (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            status TEXT NOT NULL DEFAULT 'pending',
-            year INTEGER NOT NULL,
-            permit_class_filter TEXT,
-            permit_type_filter TEXT,
-            min_cost REAL DEFAULT 5000,
-            permits_found INTEGER DEFAULT 0,
-            permits_verified INTEGER DEFAULT 0,
-            owner_builders_found INTEGER DEFAULT 0,
-            error_message TEXT,
-            started_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-            completed_at DATETIME
-        )
-    """)
-    
-    # Таблица permits - строительные пермиты
-    cursor.execute("""
-        CREATE TABLE IF NOT EXISTS permits (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            job_id INTEGER,
-            permit_num TEXT NOT NULL,
-            permit_class TEXT,
-            permit_class_mapped TEXT,
-            permit_type_mapped TEXT,
-            permit_type_desc TEXT,
-            description TEXT,
-            est_project_cost REAL,
-            applied_date DATE,
-            issued_date DATE,
-            status_current TEXT,
-            address TEXT,
-            city TEXT,
-            state TEXT,
-            zipcode TEXT,
-            contractor_name TEXT,
-            is_owner_builder INTEGER DEFAULT NULL,
-            verification_status TEXT DEFAULT 'pending',
-            work_performer_text TEXT,
-            portal_link TEXT,
-            latitude REAL,
-            longitude REAL,
-            raw_data TEXT,
-            created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-            updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-            FOREIGN KEY (job_id) REFERENCES permit_jobs(id),
-            UNIQUE(permit_num)
-        )
-    """)
-    # Миграция: контакты из блока Contacts на странице пермита
-    try:
-        cursor.execute("ALTER TABLE permits ADD COLUMN contacts_text TEXT")
-    except sqlite3.OperationalError:
-        pass  # колонка уже есть
-    
-    # ===============================
-    # ИНДЕКСЫ
-    # ===============================
-    
-    # Zillow индексы
-    cursor.execute("CREATE INDEX IF NOT EXISTS idx_zillow_homes_job_id ON zillow_homes(job_id)")
-    cursor.execute("CREATE INDEX IF NOT EXISTS idx_zillow_homes_zpid ON zillow_homes(zpid)")
-    cursor.execute("CREATE INDEX IF NOT EXISTS idx_zillow_homes_city ON zillow_homes(city)")
-    cursor.execute("CREATE INDEX IF NOT EXISTS idx_zillow_homes_price ON zillow_homes(price)")
-    cursor.execute("CREATE INDEX IF NOT EXISTS idx_zillow_jobs_status ON zillow_jobs(status)")
-    
-    # Permit индексы
-    cursor.execute("CREATE INDEX IF NOT EXISTS idx_permits_job_id ON permits(job_id)")
-    cursor.execute("CREATE INDEX IF NOT EXISTS idx_permits_permit_num ON permits(permit_num)")
-    cursor.execute("CREATE INDEX IF NOT EXISTS idx_permits_applied_date ON permits(applied_date)")
-    cursor.execute("CREATE INDEX IF NOT EXISTS idx_permits_is_owner_builder ON permits(is_owner_builder)")
-    cursor.execute("CREATE INDEX IF NOT EXISTS idx_permits_city ON permits(city)")
-    cursor.execute("CREATE INDEX IF NOT EXISTS idx_permit_jobs_status ON permit_jobs(status)")
-    
-    # ===============================
-    # MYBUILDINGPERMIT ТАБЛИЦЫ
-    # ===============================
-    
-    # Таблица mbp_jobs - задачи парсинга MyBuildingPermit
-    cursor.execute("""
-        CREATE TABLE IF NOT EXISTS mbp_jobs (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            status TEXT NOT NULL DEFAULT 'pending',
-            jurisdictions TEXT,
-            days_back INTEGER DEFAULT 7,
-            date_from_str TEXT,
-            date_to_str TEXT,
-            total_permits INTEGER DEFAULT 0,
-            analyzed_count INTEGER DEFAULT 0,
-            owner_builders_found INTEGER DEFAULT 0,
-            elapsed_seconds REAL,
-            current_jurisdiction TEXT,
-            error_message TEXT,
-            started_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-            completed_at DATETIME
-        )
-    """)
-    
-    # Таблица mbp_permits - пермиты из MyBuildingPermit
-    cursor.execute("""
-        CREATE TABLE IF NOT EXISTS mbp_permits (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            job_id INTEGER,
-            permit_number TEXT NOT NULL,
-            jurisdiction TEXT,
-            project_name TEXT,
-            description TEXT,
-            permit_type TEXT,
-            permit_status TEXT,
-            address TEXT,
-            parcel TEXT,
-            applied_date TEXT,
-            issued_date TEXT,
-            applicant_name TEXT,
-            contractor_name TEXT,
-            contractor_license TEXT,
-            is_owner_builder INTEGER DEFAULT 0,
-            matches_target_type INTEGER DEFAULT 0,
-            permit_url TEXT,
-            created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-            FOREIGN KEY (job_id) REFERENCES mbp_jobs(id),
-            UNIQUE(permit_number, jurisdiction)
-        )
-    """)
-    
-    # Миграция mbp_jobs: новые колонки
-    for col, col_type in [
-        ("date_from_str", "TEXT"),
-        ("date_to_str", "TEXT"),
-        ("analyzed_count", "INTEGER"),
-        ("elapsed_seconds", "REAL"),
-        ("current_jurisdiction", "TEXT"),
-    ]:
-        try:
-            cursor.execute(f"ALTER TABLE mbp_jobs ADD COLUMN {col} {col_type}")
-        except sqlite3.OperationalError:
-            pass
+# =======================================
+# СОВМЕСТИМЫЙ API (drop-in для роутеров)
+# =======================================
 
-    # Миграция: matches_target_type в mbp_permits (для существующих БД)
-    try:
-        cursor.execute("ALTER TABLE mbp_permits ADD COLUMN matches_target_type INTEGER DEFAULT 0")
-    except sqlite3.OperationalError:
-        pass
+class _Cursor:
+    """Обёртка над SQLAlchemy session, совместимая с sqlite3.Cursor API."""
 
-    # MyBuildingPermit индексы
-    cursor.execute("CREATE INDEX IF NOT EXISTS idx_mbp_permits_job_id ON mbp_permits(job_id)")
-    cursor.execute("CREATE INDEX IF NOT EXISTS idx_mbp_permits_jurisdiction ON mbp_permits(jurisdiction)")
-    cursor.execute("CREATE INDEX IF NOT EXISTS idx_mbp_permits_is_owner_builder ON mbp_permits(is_owner_builder)")
-    cursor.execute("CREATE INDEX IF NOT EXISTS idx_mbp_jobs_status ON mbp_jobs(status)")
-    
-    conn.commit()
-    conn.close()
-    
-    print(f"Database initialized at {DB_PATH}")
+    def __init__(self, session, row_factory=None):
+        self._session = session
+        self._result = None
+        self._rows = []
+        self._description = None
+        self.rowcount = 0
+        self._row_factory = row_factory
+
+    @property
+    def description(self):
+        return self._description
+
+    def execute(self, sql, params=None):
+        # Заменяем sqlite3-плейсхолдеры `?` на SQLAlchemy `:pN`
+        if params:
+            indexed_sql = sql
+            _params = {}
+            idx = 0
+            while '?' in indexed_sql:
+                indexed_sql = indexed_sql.replace('?', f':p{idx}', 1)
+                _params[f'p{idx}'] = params[idx]
+                idx += 1
+            self._result = self._session.execute(text(indexed_sql), _params)
+        else:
+            self._result = self._session.execute(text(sql))
+
+        if self._result.returns_rows:
+            self._description = [(col,) for col in self._result.keys()]
+            raw_rows = self._result.fetchall()
+            self.rowcount = len(raw_rows)
+            if self._row_factory:
+                self._rows = [self._row_factory(self, tuple(r)) for r in raw_rows]
+            else:
+                self._rows = [tuple(r) for r in raw_rows]
+        else:
+            self.rowcount = self._result.rowcount
+            self._rows = []
+            self._description = None
+
+    def fetchone(self):
+        if self._rows:
+            return self._rows.pop(0)
+        return None
+
+    def fetchall(self):
+        rows = self._rows
+        self._rows = []
+        return rows
+
+    @property
+    def lastrowid(self):
+        if self._result and hasattr(self._result, 'lastrowid'):
+            return self._result.lastrowid
+        # Для PostgreSQL используем RETURNING
+        return None
+
+
+class _ConnectionWrapper:
+    """Обёртка над SQLAlchemy Session, совместимая с sqlite3.Connection API."""
+
+    def __init__(self):
+        self._session = SessionLocal()
+        self.row_factory = None
+
+    def cursor(self):
+        return _Cursor(self._session, row_factory=self.row_factory)
+
+    def commit(self):
+        self._session.commit()
+
+    def close(self):
+        self._session.close()
+
+    def execute(self, sql, params=None):
+        c = self.cursor()
+        c.execute(sql, params)
+        return c
 
 
 def get_connection():
-    """Получить соединение с БД"""
-    return sqlite3.connect(str(DB_PATH), check_same_thread=False)
+    """Получить соединение с БД (drop-in замена sqlite3.connect)."""
+    return _ConnectionWrapper()
 
 
 def dict_factory(cursor, row):
-    """Конвертировать строку в словарь"""
-    return {col[0]: row[idx] for idx, col in enumerate(cursor.description)}
+    """Конвертировать строку в словарь (совместимость с sqlite3 row_factory)."""
+    if cursor.description:
+        return {col[0]: row[idx] for idx, col in enumerate(cursor.description)}
+    return {}
+
+
+def init_database():
+    """Инициализация базы данных — создание таблиц через SQLAlchemy ORM."""
+    init_sqlalchemy_database()
+    logger.info("Database initialized via SQLAlchemy.")
 
 
 # ===============================
@@ -263,52 +128,58 @@ def dict_factory(cursor, row):
 # ===============================
 
 def create_zillow_job(urls: List[str]) -> int:
-    """Создать задачу парсинга Zillow"""
+    """Создать задачу парсинга Zillow."""
     conn = get_connection()
     cursor = conn.cursor()
     cursor.execute("""
         INSERT INTO zillow_jobs (urls, total_urls, status)
         VALUES (?, ?, 'pending')
+        RETURNING id
     """, (json.dumps(urls), len(urls)))
-    job_id = cursor.lastrowid
+    row = cursor.fetchone()
+    job_id = row[0] if row else None
     conn.commit()
     conn.close()
     return job_id
 
 
 def update_zillow_job(job_id: int, **kwargs):
-    """Обновить задачу парсинга Zillow"""
+    """Обновить задачу парсинга Zillow."""
+    if not kwargs:
+        return
     conn = get_connection()
     cursor = conn.cursor()
-    
-    updates = []
+
+    set_parts = []
     params = []
     for key, value in kwargs.items():
-        updates.append(f"{key} = ?")
+        set_parts.append(f"{key} = ?")
         params.append(value)
     params.append(job_id)
-    
+
     cursor.execute(f"""
-        UPDATE zillow_jobs SET {', '.join(updates)} WHERE id = ?
+        UPDATE zillow_jobs SET {', '.join(set_parts)} WHERE id = ?
     """, params)
     conn.commit()
     conn.close()
 
 
 def insert_zillow_home(job_id: int, home_data: Dict[str, Any]) -> bool:
-    """Вставить дом Zillow (игнорировать дубликаты по zpid)"""
+    """Вставить дом Zillow (игнорировать дубликаты по zpid)."""
     conn = get_connection()
     cursor = conn.cursor()
     try:
         has_img = home_data.get('has_image')
         if isinstance(has_img, bool):
             has_img = 1 if has_img else 0
+
         cursor.execute("""
-            INSERT OR IGNORE INTO zillow_homes 
-            (job_id, zpid, address, city, state, zipcode, price, price_formatted, beds, baths, 
+            INSERT INTO zillow_homes
+            (job_id, zpid, address, city, state, zipcode, price, price_formatted, beds, baths,
              area_sqft, lot_size, year_built, home_type, latitude, longitude,
              date_sold, sold_date_text, zestimate, tax_assessed_value, has_image, detail_url, raw_data)
             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            ON CONFLICT(zpid) DO NOTHING
         """, (
             job_id,
             home_data.get('zpid'),
@@ -338,7 +209,7 @@ def insert_zillow_home(job_id: int, home_data: Dict[str, Any]) -> bool:
         conn.commit()
         return inserted
     except Exception as e:
-        print(f"Error inserting home: {e}")
+        logger.error("Error inserting home: %s", e)
         return False
     finally:
         conn.close()
@@ -349,45 +220,49 @@ def insert_zillow_home(job_id: int, home_data: Dict[str, Any]) -> bool:
 # ===============================
 
 def create_permit_job(year: int, permit_class: str = None, min_cost: float = 5000) -> int:
-    """Создать задачу парсинга пермитов"""
+    """Создать задачу парсинга пермитов."""
     conn = get_connection()
     cursor = conn.cursor()
     cursor.execute("""
         INSERT INTO permit_jobs (year, permit_class_filter, min_cost, status)
         VALUES (?, ?, ?, 'pending')
+        RETURNING id
     """, (year, permit_class, min_cost))
-    job_id = cursor.lastrowid
+    row = cursor.fetchone()
+    job_id = row[0] if row else None
     conn.commit()
     conn.close()
     return job_id
 
 
 def update_permit_job(job_id: int, **kwargs):
-    """Обновить задачу парсинга пермитов"""
+    """Обновить задачу парсинга пермитов."""
+    if not kwargs:
+        return
     conn = get_connection()
     cursor = conn.cursor()
-    
-    updates = []
+
+    set_parts = []
     params = []
     for key, value in kwargs.items():
-        updates.append(f"{key} = ?")
+        set_parts.append(f"{key} = ?")
         params.append(value)
     params.append(job_id)
-    
+
     cursor.execute(f"""
-        UPDATE permit_jobs SET {', '.join(updates)} WHERE id = ?
+        UPDATE permit_jobs SET {', '.join(set_parts)} WHERE id = ?
     """, params)
     conn.commit()
     conn.close()
 
 
 def insert_permit(job_id: int, permit_data: Dict[str, Any]) -> bool:
-    """Вставить пермит (обновить если существует)"""
+    """Вставить пермит (обновить если существует)."""
     conn = get_connection()
     cursor = conn.cursor()
     try:
         cursor.execute("""
-            INSERT INTO permits 
+            INSERT INTO permits
             (job_id, permit_num, permit_class, permit_class_mapped, permit_type_mapped,
              permit_type_desc, description, est_project_cost, applied_date, issued_date,
              status_current, address, city, state, zipcode, contractor_name,
@@ -395,11 +270,11 @@ def insert_permit(job_id: int, permit_data: Dict[str, Any]) -> bool:
              latitude, longitude, raw_data)
             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             ON CONFLICT(permit_num) DO UPDATE SET
-                job_id = excluded.job_id,
-                is_owner_builder = excluded.is_owner_builder,
-                verification_status = excluded.verification_status,
-                work_performer_text = excluded.work_performer_text,
-                updated_at = CURRENT_TIMESTAMP
+                job_id = EXCLUDED.job_id,
+                is_owner_builder = EXCLUDED.is_owner_builder,
+                verification_status = EXCLUDED.verification_status,
+                work_performer_text = EXCLUDED.work_performer_text,
+                updated_at = NOW()
         """, (
             job_id,
             permit_data.get('permit_num'),
@@ -428,42 +303,38 @@ def insert_permit(job_id: int, permit_data: Dict[str, Any]) -> bool:
         conn.commit()
         return True
     except Exception as e:
-        print(f"Error inserting permit: {e}")
+        logger.error("Error inserting permit: %s", e)
         return False
     finally:
         conn.close()
 
 
-def update_permit_verification(permit_num: str, is_owner_builder: Optional[bool], 
+def update_permit_verification(permit_num: str, is_owner_builder: Optional[bool],
                                work_performer_text: str = None,
                                verification_error: str = None,
                                contacts_text: str = None):
-    """Обновить статус верификации пермита и контакты из блока Contacts.
-    verification_error: если верификация не выполнялась (например Playwright недоступен).
-    contacts_text: текст блока Contacts (Applicant, Owner, Financially Responsible Party и т.д.).
-    """
+    """Обновить статус верификации пермита."""
     conn = get_connection()
     cursor = conn.cursor()
-    
+
     if verification_error:
         verification_status = 'error'
         work_performer_text = (verification_error[:500] if verification_error else None)
     else:
         verification_status = 'verified' if is_owner_builder is not None else 'unknown'
-    
-    # Ограничиваем размер contacts_text для БД (например 2000 символов)
+
     contacts_val = (contacts_text[:2000] if contacts_text and len(contacts_text) > 2000 else contacts_text) if contacts_text else None
-    
+
     cursor.execute("""
-        UPDATE permits SET 
+        UPDATE permits SET
             is_owner_builder = ?,
             verification_status = ?,
             work_performer_text = ?,
             contacts_text = ?,
-            updated_at = CURRENT_TIMESTAMP
+            updated_at = NOW()
         WHERE permit_num = ?
     """, (
-        1 if is_owner_builder else (0 if is_owner_builder is False else None),
+        True if is_owner_builder else (False if is_owner_builder is False else None),
         verification_status,
         work_performer_text,
         contacts_val,
@@ -478,55 +349,59 @@ def update_permit_verification(permit_num: str, is_owner_builder: Optional[bool]
 # ===============================
 
 def create_mbp_job(jurisdictions: List[str], days_back: int = 30) -> int:
-    """Создать задачу парсинга MyBuildingPermit"""
+    """Создать задачу парсинга MyBuildingPermit."""
     conn = get_connection()
     cursor = conn.cursor()
     cursor.execute("""
         INSERT INTO mbp_jobs (jurisdictions, days_back, status)
         VALUES (?, ?, 'pending')
+        RETURNING id
     """, (json.dumps(jurisdictions), days_back))
-    job_id = cursor.lastrowid
+    row = cursor.fetchone()
+    job_id = row[0] if row else None
     conn.commit()
     conn.close()
     return job_id
 
 
 def update_mbp_job(job_id: int, **kwargs):
-    """Обновить задачу парсинга MyBuildingPermit"""
+    """Обновить задачу парсинга MyBuildingPermit."""
+    if not kwargs:
+        return
     conn = get_connection()
     cursor = conn.cursor()
-    
-    updates = []
+
+    set_parts = []
     params = []
     for key, value in kwargs.items():
-        updates.append(f"{key} = ?")
+        set_parts.append(f"{key} = ?")
         params.append(value)
     params.append(job_id)
-    
+
     cursor.execute(f"""
-        UPDATE mbp_jobs SET {', '.join(updates)} WHERE id = ?
+        UPDATE mbp_jobs SET {', '.join(set_parts)} WHERE id = ?
     """, params)
     conn.commit()
     conn.close()
 
 
 def insert_mbp_permit(job_id: int, permit_data: Dict[str, Any]) -> bool:
-    """Вставить пермит MyBuildingPermit (обновить если существует)"""
+    """Вставить пермит MyBuildingPermit (обновить если существует)."""
     conn = get_connection()
     cursor = conn.cursor()
     try:
         cursor.execute("""
-            INSERT INTO mbp_permits 
+            INSERT INTO mbp_permits
             (job_id, permit_number, jurisdiction, project_name, description,
              permit_type, permit_status, address, parcel, applied_date, issued_date,
              applicant_name, contractor_name, contractor_license, is_owner_builder, matches_target_type, permit_url)
             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             ON CONFLICT(permit_number, jurisdiction) DO UPDATE SET
-                job_id = excluded.job_id,
-                project_name = excluded.project_name,
-                permit_status = excluded.permit_status,
-                is_owner_builder = excluded.is_owner_builder,
-                matches_target_type = excluded.matches_target_type
+                job_id = EXCLUDED.job_id,
+                project_name = EXCLUDED.project_name,
+                permit_status = EXCLUDED.permit_status,
+                is_owner_builder = EXCLUDED.is_owner_builder,
+                matches_target_type = EXCLUDED.matches_target_type
         """, (
             job_id,
             permit_data.get('permit_number'),
@@ -542,14 +417,14 @@ def insert_mbp_permit(job_id: int, permit_data: Dict[str, Any]) -> bool:
             permit_data.get('applicant_name'),
             permit_data.get('contractor_name'),
             permit_data.get('contractor_license'),
-            1 if permit_data.get('is_owner_builder') else 0,
-            1 if permit_data.get('matches_target_type') else 0,
+            True if permit_data.get('is_owner_builder') else False,
+            True if permit_data.get('matches_target_type') else False,
             permit_data.get('permit_url')
         ))
         conn.commit()
         return True
     except Exception as e:
-        print(f"Error inserting MBP permit: {e}")
+        logger.error("Error inserting MBP permit: %s", e)
         return False
     finally:
         conn.close()
@@ -560,70 +435,84 @@ def insert_mbp_permit(job_id: int, permit_data: Dict[str, Any]) -> bool:
 # ===============================
 
 def get_overview_stats() -> Dict[str, Any]:
-    """Получить общую статистику для Dashboard"""
+    """Получить общую статистику для Dashboard."""
     conn = get_connection()
+    conn.row_factory = dict_factory
     cursor = conn.cursor()
-    
-    # Zillow статистика
-    cursor.execute("SELECT COUNT(*) FROM zillow_homes")
-    total_homes = cursor.fetchone()[0]
-    
-    cursor.execute("SELECT COUNT(DISTINCT zpid) FROM zillow_homes")
-    unique_homes = cursor.fetchone()[0]
-    
-    cursor.execute("SELECT AVG(price) FROM zillow_homes WHERE price IS NOT NULL")
-    avg_home_price = cursor.fetchone()[0] or 0
-    
-    # Permit статистика
-    cursor.execute("SELECT COUNT(*) FROM permits")
-    total_permits = cursor.fetchone()[0]
-    
-    cursor.execute("SELECT COUNT(*) FROM permits WHERE is_owner_builder = 1")
-    owner_builders = cursor.fetchone()[0]
-    
-    cursor.execute("SELECT SUM(est_project_cost) FROM permits WHERE est_project_cost IS NOT NULL")
-    total_project_cost = cursor.fetchone()[0] or 0
-    
-    # MBP статистика
-    cursor.execute("SELECT COUNT(*) FROM mbp_permits")
-    mbp_total_permits = cursor.fetchone()[0]
-    
-    cursor.execute("SELECT COUNT(*) FROM mbp_permits WHERE is_owner_builder = 1")
-    mbp_owner_builders = cursor.fetchone()[0]
-    
-    # Последние задачи
-    cursor.execute("""
-        SELECT 'zillow' as type, id, status, started_at FROM zillow_jobs
-        UNION ALL
-        SELECT 'permit' as type, id, status, started_at FROM permit_jobs
-        UNION ALL
-        SELECT 'mbp' as type, id, status, started_at FROM mbp_jobs
-        ORDER BY started_at DESC LIMIT 5
-    """)
-    recent_jobs = cursor.fetchall()
-    
-    conn.close()
-    
-    return {
-        "zillow": {
-            "total_homes": total_homes,
-            "unique_homes": unique_homes,
-            "avg_price": round(avg_home_price, 2)
-        },
-        "permits": {
-            "total_permits": total_permits,
-            "owner_builders": owner_builders,
-            "total_project_cost": round(total_project_cost, 2)
-        },
-        "mbp": {
-            "total_permits": mbp_total_permits,
-            "owner_builders": mbp_owner_builders
-        },
-        "recent_jobs": [
-            {"type": r[0], "id": r[1], "status": r[2], "started_at": r[3]}
-            for r in recent_jobs
-        ]
-    }
+
+    try:
+        # Zillow
+        cursor.execute("SELECT COUNT(*) as cnt FROM zillow_homes")
+        total_homes = cursor.fetchone().get("cnt", 0) if cursor.fetchone is not None else 0
+        # Re-query since fetchone consumed it
+        cursor.execute("SELECT COUNT(*) as cnt FROM zillow_homes")
+        total_homes = (cursor.fetchone() or {}).get("cnt", 0)
+
+        cursor.execute("SELECT COUNT(DISTINCT zpid) as cnt FROM zillow_homes")
+        unique_homes = (cursor.fetchone() or {}).get("cnt", 0)
+
+        cursor.execute("SELECT AVG(price) as avg FROM zillow_homes WHERE price IS NOT NULL")
+        avg_home_price = (cursor.fetchone() or {}).get("avg", 0) or 0
+
+        # Permits
+        cursor.execute("SELECT COUNT(*) as cnt FROM permits")
+        total_permits = (cursor.fetchone() or {}).get("cnt", 0)
+
+        cursor.execute("SELECT COUNT(*) as cnt FROM permits WHERE is_owner_builder = true")
+        owner_builders = (cursor.fetchone() or {}).get("cnt", 0)
+
+        cursor.execute("SELECT SUM(est_project_cost) as total FROM permits WHERE est_project_cost IS NOT NULL")
+        total_project_cost = (cursor.fetchone() or {}).get("total", 0) or 0
+
+        # MBP
+        cursor.execute("SELECT COUNT(*) as cnt FROM mbp_permits")
+        mbp_total_permits = (cursor.fetchone() or {}).get("cnt", 0)
+
+        cursor.execute("SELECT COUNT(*) as cnt FROM mbp_permits WHERE is_owner_builder = true")
+        mbp_owner_builders = (cursor.fetchone() or {}).get("cnt", 0)
+
+        # Recent jobs
+        cursor.execute("""
+            (SELECT 'zillow' as type, id, status, started_at FROM zillow_jobs ORDER BY started_at DESC LIMIT 2)
+            UNION ALL
+            (SELECT 'permit' as type, id, status, started_at FROM permit_jobs ORDER BY started_at DESC LIMIT 2)
+            UNION ALL
+            (SELECT 'mbp' as type, id, status, started_at FROM mbp_jobs ORDER BY started_at DESC LIMIT 2)
+            ORDER BY started_at DESC LIMIT 5
+        """)
+        recent_jobs = cursor.fetchall()
+
+        conn.close()
+
+        return {
+            "zillow": {
+                "total_homes": total_homes,
+                "unique_homes": unique_homes,
+                "avg_price": round(float(avg_home_price), 2)
+            },
+            "permits": {
+                "total_permits": total_permits,
+                "owner_builders": owner_builders,
+                "total_project_cost": round(float(total_project_cost), 2)
+            },
+            "mbp": {
+                "total_permits": mbp_total_permits,
+                "owner_builders": mbp_owner_builders
+            },
+            "recent_jobs": [
+                {"type": r.get("type"), "id": r.get("id"), "status": r.get("status"), "started_at": str(r.get("started_at")) if r.get("started_at") else None}
+                for r in recent_jobs
+            ] if recent_jobs else []
+        }
+    except Exception as e:
+        logger.error("Error getting overview stats: %s", e)
+        conn.close()
+        return {
+            "zillow": {"total_homes": 0, "unique_homes": 0, "avg_price": 0},
+            "permits": {"total_permits": 0, "owner_builders": 0, "total_project_cost": 0},
+            "mbp": {"total_permits": 0, "owner_builders": 0},
+            "recent_jobs": []
+        }
 
 
 if __name__ == "__main__":

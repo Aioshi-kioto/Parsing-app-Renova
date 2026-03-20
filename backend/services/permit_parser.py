@@ -9,7 +9,7 @@ import httpx
 import asyncio
 import logging
 from typing import List, Dict, Any, Optional
-from concurrent.futures import ThreadPoolExecutor
+import threading
 from datetime import datetime
 
 # На Windows subprocess в asyncio работает только с ProactorEventLoop.
@@ -23,6 +23,7 @@ from database import (
     get_connection, update_permit_job, insert_permit, 
     update_permit_verification
 )
+from services.lead_pipeline import ingest_record_to_leads
 
 logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.INFO)
@@ -69,8 +70,8 @@ def build_soql_query(
     year: int = 2026,
     month: Optional[int] = None,
     permit_class: Optional[str] = None,
-    permit_type: str = "Building",
-    contractor_is_null: bool = True,
+    permit_type: Optional[str] = None,
+    contractor_is_null: Optional[bool] = True,
     min_cost: float = 5000,
     limit: int = 10000,
     offset: int = 0,
@@ -95,8 +96,8 @@ def build_soql_query(
         if permit_type:
             conditions.append(f"permittypemapped = '{permit_type}'")
         
-        # Фильтр: контрактор не указан
-        if contractor_is_null:
+        # Фильтр: контрактор не указан (None = не фильтровать, для экспорта всех пермитов)
+        if contractor_is_null is True:
             conditions.append("contractorcompanyname IS NULL")
         
         # Фильтр по минимальной стоимости
@@ -132,6 +133,8 @@ def fetch_permits_from_api(
     permit_class: Optional[str] = None,
     min_cost: float = 5000,
     limit: int = 10000,
+    permit_type: Optional[str] = None,
+    contractor_is_null: Optional[bool] = None,
 ) -> List[Dict[str, Any]]:
     """Получение пермитов из Seattle Open Data API"""
     try:
@@ -143,6 +146,7 @@ def fetch_permits_from_api(
             permit_class=permit_class,
             min_cost=min_cost,
             limit=limit,
+            contractor_is_null=contractor_is_null,
         )
         
         logger.info(f"Fetching permits from {base_url}")
@@ -487,6 +491,17 @@ def parse_permits(
         print(f"[PERMIT PARSER] Range description: {range_desc}")
         logger.info(f"[JOB {job_id}] Starting permit parsing for {range_desc}")
         
+        try:
+            from services.outbound.telegram_bot import get_telegram_bot
+            bot = get_telegram_bot()
+            asyncio.run(bot.send_parser_start("Seattle Permits (SDCI)", {
+                "Range": range_desc,
+                "Class": permit_class if permit_class else "All",
+                "Verify": verify,
+            }))
+        except Exception as e:
+            logger.warning(f"[JOB {job_id}] Failed to send Telegram start alert: {e}")
+        
         # 1. Получаем данные из API
         print(f"[PERMIT PARSER] Fetching permits from API...")
         try:
@@ -512,6 +527,12 @@ def parse_permits(
                 error_message=err_msg,
                 completed_at=datetime.now().isoformat()
             )
+            try:
+                from services.outbound.telegram_bot import get_telegram_bot
+                bot = get_telegram_bot()
+                asyncio.run(bot.send_error_alert("SDCI Parser", err_msg))
+            except Exception as alert_err:
+                logger.warning(f"[JOB {job_id}] Failed to send Telegram alert: {alert_err}")
             return
         
         if not raw_permits:
@@ -535,6 +556,23 @@ def parse_permits(
             permit_data = extract_permit_data(permit)
             permit_data["job_id"] = job_id
             insert_permit(job_id, permit_data)
+            # Sprint 1: строим лиды из существующих SDCI данных (без блокировки парсинга при ошибке CRM слоя)
+            ingest_record_to_leads(
+                {
+                    "address": permit_data.get("address"),
+                    "city": permit_data.get("city"),
+                    "zipcode": permit_data.get("zipcode"),
+                    "permit_type_mapped": permit_data.get("permit_type_mapped"),
+                    "permit_type_desc": permit_data.get("permit_type_desc"),
+                    "description": permit_data.get("description"),
+                    "applicant_name": permit.get("applicant"),
+                    "applicant_phone": permit.get("applicantphone"),
+                    "contractor_name": permit_data.get("contractor_name"),
+                    "applied_date": permit_data.get("applied_date"),
+                    "issued_date": permit_data.get("issued_date"),
+                },
+                source="sdci",
+            )
         
         # 3. Верификация (если включена) — батчами параллельно (размер через PERMIT_VERIFY_BATCH_SIZE, по умолч. 6)
         owner_builders_count = 0
@@ -616,6 +654,19 @@ def parse_permits(
             f"{verified_count} verified, {owner_builders_count} owner-builders"
         )
         
+        try:
+            from services.outbound.telegram_bot import get_telegram_bot
+            bot = get_telegram_bot()
+            asyncio.run(bot.send_parser_finish("Seattle Permits (SDCI)", {
+                "Status": final_status,
+                "Range": range_desc,
+                "Permits Found": len(raw_permits),
+                "Verified": verified_count,
+                "Owner Builders": owner_builders_count
+            }))
+        except Exception as e:
+            logger.warning(f"[JOB {job_id}] Failed to send Telegram finish alert: {e}")
+        
     except Exception as e:
         err_msg = str(e)
         import traceback
@@ -638,6 +689,13 @@ def parse_permits(
             logger.error(f"[JOB {job_id}] Critical error: {err_msg}")
             logger.error(error_traceback)
             update_permit_job(job_id, status="failed", error_message=err_msg)
+            
+            try:
+                from services.outbound.telegram_bot import get_telegram_bot
+                bot = get_telegram_bot()
+                asyncio.run(bot.send_error_alert("SDCI Parser Fatal", err_msg))
+            except Exception as alert_err:
+                logger.warning(f"[JOB {job_id}] Failed to send Telegram alert: {alert_err}")
 
 
 def start_permit_parse_job(
@@ -652,19 +710,22 @@ def start_permit_parse_job(
     """Запускает парсинг пермитов в отдельном потоке"""
     print(f"[PERMIT PARSER] Starting background thread for job {job_id}...")
     try:
-        executor = ThreadPoolExecutor(max_workers=1)
-        future = executor.submit(
-            parse_permits,
-            job_id=job_id,
-            year=year,
-            month=month,
-            permit_class=permit_class,
-            min_cost=min_cost,
-            verify=verify,
-            headless=headless
+        thread = threading.Thread(
+            target=parse_permits,
+            kwargs={
+                "job_id": job_id,
+                "year": year,
+                "month": month,
+                "permit_class": permit_class,
+                "min_cost": min_cost,
+                "verify": verify,
+                "headless": headless
+            },
+            daemon=True
         )
+        thread.start()
         print(f"[PERMIT PARSER] OK Background thread started for job {job_id}")
-        return future
+        return thread
     except Exception as e:
         print(f"[PERMIT PARSER] ERROR starting background thread: {e}")
         import traceback

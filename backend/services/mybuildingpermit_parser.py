@@ -1,20 +1,22 @@
 """
 MyBuildingPermit Parser Service
-Использует parsers/mybuildingpermit-parsing — адаптивные даты (7→6→5...), дедупликация, БД
+
+Playwright-скрапер: backend/services/mbp_playwright_scraper.py (Kendo UI на permitsearch.mybuildingpermit.com).
+
+Прокси Decodo: PROXY_URL в .env передаётся в браузер (см. docs/integrations/decodo/README.md).
 """
 import asyncio
+import os
 import threading
 from typing import List, Dict, Any, Optional
 from datetime import datetime
 
-import sys
-from pathlib import Path
-# Добавляем parsers/mybuildingpermit-parsing в path
-PROJECT_ROOT = Path(__file__).parent.parent.parent
-PARSER_PATH = PROJECT_ROOT / "parsers" / "mybuildingpermit-parsing"
-sys.path.insert(0, str(PARSER_PATH))
+import logging
+
+logger = logging.getLogger(__name__)
 
 from database import update_mbp_job, insert_mbp_permit, get_connection
+from services.lead_pipeline import ingest_record_to_leads
 
 
 def _run_async(coro):
@@ -40,7 +42,7 @@ async def run_parse_job(
     headless: bool = False
 ) -> List[Dict]:
     """Основная функция парсинга с адаптивными датами и сохранением в БД"""
-    from src.scraper import MyBuildingPermitScraper
+    from services.mbp_playwright_scraper import MyBuildingPermitScraper
 
     def check_cancelled():
         """Проверяет, была ли задача отменена"""
@@ -88,6 +90,17 @@ async def run_parse_job(
     print(f"\n[MBP] Job {job_id}: jurisdictions={jurisdictions}, limit={effective_limit}, headless={headless}")
     update_mbp_job(job_id, status="running")
 
+    try:
+        from services.outbound.telegram_bot import get_telegram_bot
+        bot = get_telegram_bot()
+        _run_async(bot.send_parser_start("MyBuildingPermit", {
+            "Jurisdictions": ", ".join(jurisdictions),
+            "Days Back": days_back,
+            "Limit / City": effective_limit
+        }))
+    except Exception as e:
+        print(f"[MBP] Failed to send Telegram start alert: {e}")
+
     scraper = None
     try:
         # Проверка cancelled перед созданием scraper
@@ -101,7 +114,19 @@ async def run_parse_job(
             )
             return []
         
-        scraper = MyBuildingPermitScraper(headless=headless)
+        proxy_url = (os.environ.get("PROXY_URL") or "").strip() or None
+        if proxy_url:
+            from utils.decodo_proxy import normalize_proxy_url_for_playwright
+
+            proxy_url = normalize_proxy_url_for_playwright(proxy_url)
+        try:
+            if proxy_url:
+                scraper = MyBuildingPermitScraper(headless=headless, proxy_url=proxy_url)
+            else:
+                scraper = MyBuildingPermitScraper(headless=headless)
+        except TypeError:
+            # Старый scraper без proxy_url — только headless
+            scraper = MyBuildingPermitScraper(headless=headless)
         
         # Проверка cancelled перед запуском парсинга (браузер ещё не открыт)
         if check_cancelled():
@@ -118,6 +143,7 @@ async def run_parse_job(
             cities=jurisdictions,
             limit_per_city=effective_limit,
             progress_callback=on_progress,
+            days_back=days_back,
         )
 
         # Сохраняем в БД (insert_mbp_permit уже дедуплицирует по permit_number,jurisdiction)
@@ -128,7 +154,22 @@ async def run_parse_job(
         saved_count = 0
         for r in results:
             if r.permit_number and not r.error:
-                insert_mbp_permit(job_id, r.to_dict())
+                row = r.to_dict()
+                insert_mbp_permit(job_id, row)
+                # Sprint 1: классифицируем MBP запись в leads (если подходит под кейсы Rules Engine)
+                ingest_record_to_leads(
+                    {
+                        "address": row.get("address"),
+                        "city": row.get("jurisdiction"),
+                        "permit_type": row.get("permit_type"),
+                        "description": row.get("description"),
+                        "applicant_name": row.get("applicant_name"),
+                        "contractor_name": row.get("contractor_name"),
+                        "applied_date": row.get("applied_date"),
+                        "issued_date": row.get("issued_date"),
+                    },
+                    source="mybuildingpermit",
+                )
                 saved_count += 1
                 if r.is_owner_builder:
                     print(f"[MBP] Job {job_id}: Saved owner-builder {r.permit_number} ({r.jurisdiction})")
@@ -149,6 +190,19 @@ async def run_parse_job(
         )
 
         print(f"[MBP] Job {job_id} completed: total={total_count}, matching_types={matching_count}, owner_builders={owner_count}, {stats.get('elapsed_seconds', 0):.1f}s")
+        
+        try:
+            from services.outbound.telegram_bot import get_telegram_bot
+            bot = get_telegram_bot()
+            _run_async(bot.send_parser_finish("MyBuildingPermit", {
+                "Total Parsed": total_count,
+                "Matching Types": matching_count,
+                "Owner Builders": owner_count,
+                "Elapsed Time": f"{stats.get('elapsed_seconds', 0):.1f}s"
+            }))
+        except Exception as alert_err:
+            print(f"[MBP] Failed to send Telegram finish alert: {alert_err}")
+
         return [r.to_dict() for r in results]
 
     except Exception as e:
@@ -163,7 +217,6 @@ async def run_parse_job(
             except Exception as close_err:
                 print(f"[MBP] Job {job_id}: Error closing browser: {close_err}")
         
-        # Если задача была отменена, не помечаем как failed
         if "cancelled" in err_msg.lower():
             print(f"[MBP] Job {job_id} CANCELLED")
             update_mbp_job(
@@ -181,6 +234,12 @@ async def run_parse_job(
                 error_message=err_msg,
                 completed_at=datetime.now().isoformat(),
             )
+            try:
+                from services.outbound.telegram_bot import get_telegram_bot
+                bot = get_telegram_bot()
+                _run_async(bot.send_error_alert("MBP Parser", err_msg))
+            except Exception as alert_err:
+                print(f"[MBP] Failed to send Telegram alert: {alert_err}")
         raise
 
 
@@ -197,7 +256,7 @@ def start_mbp_parse_job(
             _run_async(run_parse_job(job_id, jurisdictions, days_back, limit_per_city, headless))
         except Exception as e:
             import traceback
-            err_msg = f"{type(e).__name__}: {str(e)}"
+            err_msg = str(e)
             print(f"[MBP] Job {job_id} FAILED (thread): {err_msg}")
             traceback.print_exc()
             update_mbp_job(
@@ -207,6 +266,12 @@ def start_mbp_parse_job(
                 completed_at=datetime.now().isoformat(),
                 current_jurisdiction=None,
             )
+            try:
+                from services.outbound.telegram_bot import get_telegram_bot
+                bot = get_telegram_bot()
+                _run_async(bot.send_error_alert("MBP Parser Thread", err_msg))
+            except Exception as alert_err:
+                print(f"[MBP] Failed to send Telegram alert (thread): {alert_err}")
 
     thread = threading.Thread(target=run, daemon=True)
     thread.start()
